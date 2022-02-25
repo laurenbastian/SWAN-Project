@@ -47,32 +47,16 @@ rm(da32961.0001)
 ##if SWANID is in all datasets, add it to the list
 visit.list = list(visit1, visit2, visit3, visit4, visit5, visit6, visit7, visit8, visit9, visit10)
 
-ID.vec = c()
-
-for (i in 1:length(base$SWANID))
-{
-  id = base$SWANID[i]
-  include = TRUE
-  j = 1
-  while (include == TRUE & j <= 10)
-  {
-    if (!(id %in% visit.list[[j]]$SWANID))
-    {
-      include = FALSE
-    }
-    j = j + 1
-  }
-  
-  if(include == TRUE)
-  {
-    ID.vec = c(ID.vec, id)
-  }
-}
-
-rm(i)
-rm(id)
-rm(include)
-rm(j)
+swan.df = merge(base, visit1, by = "SWANID")
+swan.df = merge(swan.df, visit2, by = "SWANID")
+swan.df = merge(swan.df, visit3, by = "SWANID")
+swan.df = merge(swan.df, visit4, by = "SWANID")
+swan.df = merge(swan.df, visit5, by = "SWANID")
+swan.df = merge(swan.df, visit6, by = "SWANID")
+swan.df = merge(swan.df, visit7, by = "SWANID")
+swan.df = merge(swan.df, visit8, by = "SWANID")
+swan.df = merge(swan.df, visit9, by = "SWANID")
+swan.df = merge(swan.df, visit10, by = "SWANID")
 
 
 
