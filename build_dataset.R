@@ -18,10 +18,7 @@ source("load_swan_data.R")
 
 #ESTLSTV were you taking estrogen/progestin medications at previous visit
 #ESTROG taking estrogen since last visit
-##Fibroids FIBROID, FIBRUTR
 ##endometriosis ENDO
-##breast cancer CANCERS
-##cervical cancer SITESPE
 ##start of menopause STATUS
 ##compare for HRT groups ESTROG and other
 ##SWANID
@@ -169,7 +166,81 @@ for (i in 2:length(endo.list))
   }
 }
 
+#CLEANING ESTROGEN USE
 
+yes.estro.codes = c("(2) Yes", "(2) 2: Yes")
+no.estro.codes = c("(1) No", "(1) 1: No")
+
+#endo.list is a list of all ENDO factors, ENDO1 is unobserved, so give and NA placeholder
+estro.list = list(swan.use.df$ESTROG11, swan.use.df$ESTROG12, swan.use.df$ESTROG13,
+                 swan.use.df$ESTROG14, swan.use.df$ESTROG15, swan.use.df$ESTROG16, 
+                 swan.use.df$ESTROG17, swan.use.df$ESTROG18, swan.use.df$ESTROG19,
+                 swan.use.df$ESTROG110)
+
+#replaces with 1 if no estrogen use and 2 if estrogen use, NA values retained
+for (i in 1:length(estro.list))
+{
+  estro = unlist(estro.list[[i]])
+  estro = ifelse(status %in% yes.estro.codes, 1, estro)
+  estro = ifelse(status %in% no.estro.codes, 0, estro)
+  
+  
+  if (i == 1)
+  {
+    swan.use.df$ESTROG11 = estro
+  }
+  else if (i == 2)
+  {
+    swan.use.df$ESTROG12 = estro
+  }
+  else if (i == 3)
+  {
+    swan.use.df$ESTROG13 = estro
+  }
+  else if (i == 4)
+  {
+    swan.use.df$ESTROG14 = estro
+  }
+  else if (i == 5)
+  {
+    swan.use.df$ESTROG15 = estro
+  }
+  else if (i == 6)
+  {
+    swan.use.df$ESTROG16 = estro
+  }
+  else if (i == 7)
+  {
+    swan.use.df$ESTROG17 = estro
+  }
+  else if (i == 8)
+  {
+    swan.use.df$ESTROG18 = estro
+  }
+  else if (i == 9)
+  {
+    swan.use.df$ESTROG19 = estro
+  }
+  else if (i == 10)
+  {
+    swan.use.df$ESTROG110 = estro
+  }
+}
+
+
+
+##GET IN LONG FORMAT
+newcol = data.frame("ENDO1" = rep(NA, nrow(swan.use.df)))
+swan.use.newcol = cbind(swan.use.df, newcol)
+swan.use.newcol = swan.use.newcol[ ,c(1:22, 32, 23:31)]
+
+swan.df.long = reshape(data = swan.use.newcol, 
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(3:12), c(13:22), c(23:32)), 
+                       v.names = c("status", "estrogen", "endo"), 
+                       timevar = "visit",
+                       times = c(1,2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
 
 
 
