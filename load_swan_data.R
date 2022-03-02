@@ -43,20 +43,7 @@ load("./swan_data/swan_visit10.rda")
 visit10 = da32961.0001
 rm(da32961.0001)
 
-##Get all IDs for which there are values at every time point
-##if SWANID is in all datasets, add it to the list
-visit.list = list(visit1, visit2, visit3, visit4, visit5, visit6, visit7, visit8, visit9, visit10)
 
-swan.df = merge(base, visit1, by = "SWANID")
-swan.df = merge(swan.df, visit2, by = "SWANID")
-swan.df = merge(swan.df, visit3, by = "SWANID")
-swan.df = merge(swan.df, visit4, by = "SWANID")
-swan.df = merge(swan.df, visit5, by = "SWANID")
-swan.df = merge(swan.df, visit6, by = "SWANID")
-swan.df = merge(swan.df, visit7, by = "SWANID")
-swan.df = merge(swan.df, visit8, by = "SWANID")
-swan.df = merge(swan.df, visit9, by = "SWANID")
-swan.df = merge(swan.df, visit10, by = "SWANID")
 
 
 

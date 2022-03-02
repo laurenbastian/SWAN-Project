@@ -1,21 +1,35 @@
 ##LIBRARIES
 #install.packages("dplyr")
 #install.packages("gee")
-#install.packages("reshape2")
-setwd("./")
 library(dplyr)
 library(gee)
-library(reshape2)
+
+##############################
 
 ##LOAD DATA
-#visit.list: a list of all visits
 #base: a dataframe of all visits
 #visit_: individual dataframes for each of the 10 follow-up visits
 #swan.df: a dataframe of all individuals with observations for all data collection times
 source("load_swan_data.R")
 
-##SELECT VARIABLES OF INTEREST
+##Get all IDs for which there are values at every time point
+##if SWANID is in all datasets, add it to the list
 
+swan.df = merge(base, visit1, by = "SWANID")
+swan.df = merge(swan.df, visit2, by = "SWANID")
+swan.df = merge(swan.df, visit3, by = "SWANID")
+swan.df = merge(swan.df, visit4, by = "SWANID")
+swan.df = merge(swan.df, visit5, by = "SWANID")
+swan.df = merge(swan.df, visit6, by = "SWANID")
+swan.df = merge(swan.df, visit7, by = "SWANID")
+swan.df = merge(swan.df, visit8, by = "SWANID")
+swan.df = merge(swan.df, visit9, by = "SWANID")
+swan.df = merge(swan.df, visit10, by = "SWANID")
+
+
+####################################
+
+##SELECT VARIABLES OF INTEREST
 #ESTLSTV were you taking estrogen/progestin medications at previous visit
 #ESTROG taking estrogen since last visit
 ##endometriosis ENDO
@@ -31,10 +45,37 @@ swan.use.df = select(swan.df, SWANID, RACE,
                      ESTROG16, ESTROG17, ESTROG18, ESTROG19, ESTROG110,
                      ENDO2, ENDO3, ENDO4, ENDO5, ENDO6, ENDO7, ENDO8, ENDO9, ENDO10)
 
+#remove visits to save memory
+rm(base, visit1, visit2, visit3, visit4, visit5, visit6, visit7, visit8, visit9, visit10)
+
 #########################################
 
 ##CLEANING DATA
-#CLEANING MENOPAUSAL STATUS
+
+##Get data in long format
+newcol = data.frame("ENDO1" = rep(NA, nrow(swan.use.df)))
+swan.use.newcol = cbind(swan.use.df, newcol)
+swan.use.newcol = swan.use.newcol[ ,c(1:22, 32, 23:31)]
+
+swan.df.long = reshape(data = swan.use.newcol, 
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(3:12), c(13:22), c(23:32)), 
+                       v.names = c("status", "estrogen", "endo"), 
+                       timevar = "visit",
+                       times = c(1,2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
+
+#Cleaning endometriosis status
+swan.df.long$endo = as.character(swan.df.long$endo)
+swan.df.long$endo[swan.df.long$endo == "(2) Yes" | swan.df.long$endo == "(2) 2: Yes"] = "Yes"
+swan.df.long$endo[swan.df.long$endo == "(1) No" | swan.df.long$endo == "(1) 1: No"] = "No"
+
+#Cleaning estrogen use
+swan.df.long$estrogen = as.character(swan.df.long$estrogen)
+swan.df.long$estrogen[swan.df.long$estrogen == "(2) Yes" | swan.df.long$estrogen == "(2) 2: Yes"] = "Yes"
+swan.df.long$estrogen[swan.df.long$estrogen == "(1) No" | swan.df.long$estrogen == "(1) 1: No"] = "No"
+
+#Cleaning menopausal status
 status1.codes = c("(1) Post by Bilateral Salpingo Oophorectomy", "(1) Post by BSO", "(1) Hysterectomy/both ovaries removed", 
                   "(1) 1: Post by bilateral salpingo oophorectomy (BSO)", "(1) Post by BSO (Bilateral Salpingo Oophorectomy)",
                   "(1) 1: Post by BSO", "(1) Hysterectomy/both ovaries removed")
@@ -48,199 +89,12 @@ status7.codes = c("(7) Unknown due to hormone therapy use", "(7) Unknown due to 
                   "(7) 7: Unknown due to HT use", "(7) Unknown due to hormones (HT) use")
 status8.codes = c("(8) Unknown due to hysterectomy", "(8) 8: Unknown due to hysterectomy")
 
-status.list = list(swan.use.df$STATUS1, swan.use.df$STATUS2, swan.use.df$STATUS3, 
-               swan.use.df$STATUS4, swan.use.df$STATUS5, swan.use.df$STATUS6, 
-               swan.use.df$STATUS7, swan.use.df$STATUS8, swan.use.df$STATUS9, 
-               swan.use.df$STATUS10)
-
-
-for (i in 1:length(status.list))
-{
-  status = unlist(status.list[[i]])
-  status = ifelse(status %in% status1.codes, 1, status)
-  status = ifelse(status %in% status2.codes, 2, status)
-  status = ifelse(status %in% status3.codes, 3, status)
-  status = ifelse(status %in% status4.codes, 4, status)
-  status = ifelse(status %in% status5.codes, 5, status)
-  status = ifelse(status %in% status6.codes, 6, status)
-  status = ifelse(status %in% status7.codes, 7, status)
-  status = ifelse(status %in% status8.codes, 8, status)
-  
-  if (i == 1)
-  {
-    swan.use.df$STATUS1 = status
-  }
-  else if (i == 2)
-  {
-    swan.use.df$STATUS2 = status
-  }
-  else if (i == 3)
-  {
-    swan.use.df$STATUS3 = status
-  }
-  else if (i == 4)
-  {
-    swan.use.df$STATUS4 = status
-  }
-  else if (i == 5)
-  {
-    swan.use.df$STATUS5 = status
-  }
-  else if (i == 6)
-  {
-    swan.use.df$STATUS6 = status
-  }
-  else if (i == 7)
-  {
-    swan.use.df$STATUS7 = status
-  }
-  else if (i == 8)
-  {
-    swan.use.df$STATUS8 = status
-  }
-  else if (i == 9)
-  {
-    swan.use.df$STATUS9 = status
-  }
-  else if (i == 10)
-  {
-    swan.use.df$STATUS10 = status
-  }
-}
-
-
-
-#CLEANING ENDOMETRIOSIS DIOGNOSIS
-
-yes.endo.codes = c("(2) Yes", "(2) 2: Yes")
-no.endo.codes = c("(1) No", "(1) 1: No")
-
-#endo.list is a list of all ENDO factors, ENDO1 is unobserved, so give and NA placeholder
-endo.list = list(NA, swan.use.df$ENDO2, swan.use.df$ENDO3, swan.use.df$ENDO4,
-                 swan.use.df$ENDO5, swan.use.df$ENDO6, swan.use.df$ENDO7,
-                 swan.use.df$ENDO8, swan.use.df$ENDO9, swan.use.df$ENDO10)
-
-#replaces with 1 if no endometriosis and 2 if endometriosis, NA values retained
-for (i in 2:length(endo.list))
-{
-  endo = unlist(endo.list[[i]])
-  endo = ifelse(status %in% yes.endo.codes, 1, endo)
-  endo = ifelse(status %in% no.endo.codes, 0, endo)
-  
-
-  if (i == 2)
-  {
-    swan.use.df$ENDO2 = endo
-  }
-  else if (i == 3)
-  {
-    swan.use.df$ENDO3 = endo
-  }
-  else if (i == 4)
-  {
-    swan.use.df$ENDO4 = endo
-  }
-  else if (i == 5)
-  {
-    swan.use.df$ENDO5 = endo
-  }
-  else if (i == 6)
-  {
-    swan.use.df$ENDO6 = endo
-  }
-  else if (i == 7)
-  {
-    swan.use.df$ENDO7 = endo
-  }
-  else if (i == 8)
-  {
-    swan.use.df$ENDO8 = endo
-  }
-  else if (i == 9)
-  {
-    swan.use.df$ENDO9 = endo
-  }
-  else if (i == 10)
-  {
-    swan.use.df$ENDO10 = endo
-  }
-}
-
-#CLEANING ESTROGEN USE
-
-yes.estro.codes = c("(2) Yes", "(2) 2: Yes")
-no.estro.codes = c("(1) No", "(1) 1: No")
-
-#endo.list is a list of all ENDO factors, ENDO1 is unobserved, so give and NA placeholder
-estro.list = list(swan.use.df$ESTROG11, swan.use.df$ESTROG12, swan.use.df$ESTROG13,
-                 swan.use.df$ESTROG14, swan.use.df$ESTROG15, swan.use.df$ESTROG16, 
-                 swan.use.df$ESTROG17, swan.use.df$ESTROG18, swan.use.df$ESTROG19,
-                 swan.use.df$ESTROG110)
-
-#replaces with 1 if no estrogen use and 2 if estrogen use, NA values retained
-for (i in 1:length(estro.list))
-{
-  estro = unlist(estro.list[[i]])
-  estro = ifelse(status %in% yes.estro.codes, 1, estro)
-  estro = ifelse(status %in% no.estro.codes, 0, estro)
-  
-  
-  if (i == 1)
-  {
-    swan.use.df$ESTROG11 = estro
-  }
-  else if (i == 2)
-  {
-    swan.use.df$ESTROG12 = estro
-  }
-  else if (i == 3)
-  {
-    swan.use.df$ESTROG13 = estro
-  }
-  else if (i == 4)
-  {
-    swan.use.df$ESTROG14 = estro
-  }
-  else if (i == 5)
-  {
-    swan.use.df$ESTROG15 = estro
-  }
-  else if (i == 6)
-  {
-    swan.use.df$ESTROG16 = estro
-  }
-  else if (i == 7)
-  {
-    swan.use.df$ESTROG17 = estro
-  }
-  else if (i == 8)
-  {
-    swan.use.df$ESTROG18 = estro
-  }
-  else if (i == 9)
-  {
-    swan.use.df$ESTROG19 = estro
-  }
-  else if (i == 10)
-  {
-    swan.use.df$ESTROG110 = estro
-  }
-}
-
-
-
-##GET IN LONG FORMAT
-newcol = data.frame("ENDO1" = rep(NA, nrow(swan.use.df)))
-swan.use.newcol = cbind(swan.use.df, newcol)
-swan.use.newcol = swan.use.newcol[ ,c(1:22, 32, 23:31)]
-
-swan.df.long = reshape(data = swan.use.newcol, 
-                       idvar = c("SWANID", "RACE"), 
-                       varying = list(c(3:12), c(13:22), c(23:32)), 
-                       v.names = c("status", "estrogen", "endo"), 
-                       timevar = "visit",
-                       times = c(1,2,3,4,5,6,7,8,9,10), 
-                       direction = "long")
-
-
-
+swan.df.long$status = as.character(swan.df.long$status)
+swan.df.long$status[swan.df.long$status %in% status1.codes] = "1"
+swan.df.long$status[swan.df.long$status %in% status2.codes] = "2"
+swan.df.long$status[swan.df.long$status %in% status3.codes] = "3"
+swan.df.long$status[swan.df.long$status %in% status4.codes] = "4"
+swan.df.long$status[swan.df.long$status %in% status5.codes] = "5"
+swan.df.long$status[swan.df.long$status %in% status6.codes] = "6"
+swan.df.long$status[swan.df.long$status %in% status7.codes] = "7"
+swan.df.long$status[swan.df.long$status %in% status8.codes] = "8"
