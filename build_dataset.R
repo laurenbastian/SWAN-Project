@@ -1,8 +1,6 @@
 ##LIBRARIES
 #install.packages("dplyr")
-#install.packages("gee")
 library(dplyr)
-library(gee)
 
 ##############################
 
@@ -38,7 +36,7 @@ swan.df = merge(swan.df, visit10, by = "SWANID")
 ##SWANID
 
 
-swan.df = select(swan.df, SWANID, RACE, 
+swan.df = dplyr::select(swan.df, SWANID, RACE, 
                      STATUS1, STATUS2, STATUS3, STATUS4, STATUS5, STATUS6, 
                      STATUS7, STATUS8, STATUS9, STATUS10,
                      ESTROG11, ESTROG12, ESTROG13, ESTROG14, ESTROG15,
@@ -100,18 +98,19 @@ for (i in 23:31)
   swan.df.wide[,i][swan.df.wide[,i] == "(1) No" | swan.df.wide[,i] == "(1) 1: No"] = 0
 }
 
-#removing observations with NA
-cols = as.vector(colnames(swan.df.wide))
-swan.df.wide = swan.df.wide[complete.cases(swan.df.wide[cols]), cols]
 
 #########################################
-##LONG FORMAT 
+##LONG FORMAT (complete) swan.df.long
+
+#removing observations with NA
+cols = as.vector(colnames(swan.df.wide))
+swan.df.wide.complete = swan.df.wide[complete.cases(swan.df.wide[cols]), cols]
 
 #remove visit1 data since no observations for endometriosis
-swan.df.wide = swan.df.wide[, -c(3,13)]
+swan.df.wide.complete = swan.df.wide.complete[, -c(3,13)]
 
 #reshape to long
-swan.df.long = reshape(data = swan.df.wide, 
+swan.df.long.complete = reshape(data = swan.df.wide.complete, 
                        idvar = c("SWANID", "RACE"), 
                        varying = list(c(3:11), c(12:20), c(21:29)), 
                        v.names = c("status", "estrogen", "endo"), 
@@ -126,31 +125,34 @@ swan.df.long$endo = as.numeric(swan.df.long$endo)
 swan.df.long$RACE = as.factor(swan.df.long$RACE)
 swan.df.long$SWANID = as.factor(swan.df.long$SWANID)
 
-#######################
-#GEEPACK (https://faculty.washington.edu/heagerty/Courses/b571/homework/geepack-paper.pdf)
-#install.packages("geepack")
-library(geepack)
 
+##LONG FORMAT (incomplete) swan.df.long.na
 
-##different correlation structures
-geemod1 = geeglm(endo ~ 1 + estrogen + status + RACE, 
-                id = SWANID,
-                data = swan.df.long, 
-                family = "binomial", 
-                corstr = "independence")
-summary(geemod1)
+#remove visit1 data since no observations for endometriosis
+swan.df.wide = swan.df.wide[, -c(3,13)]
 
-geemod2 = geeglm(endo ~ 1 + estrogen + status + RACE, 
-                 id = SWANID,
-                 data = swan.df.long, 
-                 family = "binomial", 
-                 corstr = "ar1")
-summary(geemod2)
+#reshape to long
+swan.df.long.na = reshape(data = swan.df.wide, 
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(3:11), c(12:20), c(21:29)), 
+                       v.names = c("status", "estrogen", "endo"), 
+                       timevar = "visit",
+                       times = c(2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
 
-##remove race
-geemod3 = geeglm(endo ~ 1 + estrogen + status, 
-                 id = SWANID,
-                 data = swan.df.long, 
-                 family = "binomial", 
-                 corstr = "ar1")
-anova(geemod2, geemod3)
+swan.df.long.na$visit = as.factor(swan.df.long.na$visit)
+swan.df.long.na$estrogen = as.factor(swan.df.long.na$estrogen)
+swan.df.long.na$status = as.factor(swan.df.long.na$status)
+swan.df.long.na$endo = as.numeric(swan.df.long.na$endo)
+swan.df.long.na$RACE = as.factor(swan.df.long.na$RACE)
+swan.df.long.na$SWANID = as.factor(swan.df.long.na$SWANID)
+
+################
+##rename objects
+swan.df.wide.na = swan.df.wide #includes na values
+swan.df.wide = swan.df.wide.complete
+
+##remove unnecessary objects
+rm(cols, i, status1.codes, status2.codes, status3.codes, status4.codes,
+   status5.codes, status6.codes, status7.codes, status8.codes, swan.df.wide.complete)
+
