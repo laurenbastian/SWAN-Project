@@ -38,7 +38,7 @@ swan.df = merge(swan.df, visit10, by = "SWANID")
 ##SWANID
 
 
-swan.use.df = select(swan.df, SWANID, RACE, 
+swan.df = select(swan.df, SWANID, RACE, 
                      STATUS1, STATUS2, STATUS3, STATUS4, STATUS5, STATUS6, 
                      STATUS7, STATUS8, STATUS9, STATUS10,
                      ESTROG11, ESTROG12, ESTROG13, ESTROG14, ESTROG15,
@@ -48,38 +48,18 @@ swan.use.df = select(swan.df, SWANID, RACE,
 #remove visits to save memory
 rm(base, visit1, visit2, visit3, visit4, visit5, visit6, visit7, visit8, visit9, visit10)
 
-#########################################
+###############################
 
-##CLEANING DATA
+##CLEANING DATA WIDE FORMAT
 
-##Get data in long format
-newcol = data.frame("ENDO1" = rep(NA, nrow(swan.use.df)))
-swan.use.newcol = cbind(swan.use.df, newcol)
-swan.use.newcol = swan.use.newcol[ ,c(1:22, 32, 23:31)]
+swan.df.wide = swan.df
 
-swan.df.long = reshape(data = swan.use.newcol, 
-                       idvar = c("SWANID", "RACE"), 
-                       varying = list(c(3:12), c(13:22), c(23:32)), 
-                       v.names = c("status", "estrogen", "endo"), 
-                       timevar = "visit",
-                       times = c(1,2,3,4,5,6,7,8,9,10), 
-                       direction = "long")
+#menopausal status
 
-#Cleaning endometriosis status
-swan.df.long$endo = as.character(swan.df.long$endo)
-swan.df.long$endo[swan.df.long$endo == "(2) Yes" | swan.df.long$endo == "(2) 2: Yes"] = "Yes"
-swan.df.long$endo[swan.df.long$endo == "(1) No" | swan.df.long$endo == "(1) 1: No"] = "No"
-
-#Cleaning estrogen use
-swan.df.long$estrogen = as.character(swan.df.long$estrogen)
-swan.df.long$estrogen[swan.df.long$estrogen == "(2) Yes" | swan.df.long$estrogen == "(2) 2: Yes"] = "Yes"
-swan.df.long$estrogen[swan.df.long$estrogen == "(1) No" | swan.df.long$estrogen == "(1) 1: No"] = "No"
-
-#Cleaning menopausal status
 status1.codes = c("(1) Post by Bilateral Salpingo Oophorectomy", "(1) Post by BSO", "(1) Hysterectomy/both ovaries removed", 
                   "(1) 1: Post by bilateral salpingo oophorectomy (BSO)", "(1) Post by BSO (Bilateral Salpingo Oophorectomy)",
                   "(1) 1: Post by BSO", "(1) Hysterectomy/both ovaries removed")
-status2.codes = c("(2) Natural post", "(2) Post-menopausal", "(2) 2: Natural post", "(2) 2: Natural Post")
+status2.codes = c("(2) Natural post", "(2) Natural Post", "(2) Post-menopausal", "(2) 2: Natural post", "(2) 2: Natural Post")
 status3.codes = c("(3) Late perimenopause", "(3) Late peri", "(3) Late Peri", "(3) 3: Late peri", "(3) 3: Late Peri")
 status4.codes = c("(4) Early perimenopause", "(4) Early peri", "(4) Early Peri", "(4) 4: Early peri", "(4) 4: Early Peri")
 status5.codes = c("(5) Pre-menopausal", '(5) 5: Pre-menopausal')
@@ -89,12 +69,88 @@ status7.codes = c("(7) Unknown due to hormone therapy use", "(7) Unknown due to 
                   "(7) 7: Unknown due to HT use", "(7) Unknown due to hormones (HT) use")
 status8.codes = c("(8) Unknown due to hysterectomy", "(8) 8: Unknown due to hysterectomy")
 
-swan.df.long$status = as.character(swan.df.long$status)
-swan.df.long$status[swan.df.long$status %in% status1.codes] = "1"
-swan.df.long$status[swan.df.long$status %in% status2.codes] = "2"
-swan.df.long$status[swan.df.long$status %in% status3.codes] = "3"
-swan.df.long$status[swan.df.long$status %in% status4.codes] = "4"
-swan.df.long$status[swan.df.long$status %in% status5.codes] = "5"
-swan.df.long$status[swan.df.long$status %in% status6.codes] = "6"
-swan.df.long$status[swan.df.long$status %in% status7.codes] = "7"
-swan.df.long$status[swan.df.long$status %in% status8.codes] = "8"
+
+for (i in 3:12)
+{
+  swan.df.wide[,i] = as.character(swan.df.wide[,i])
+  swan.df.wide[,i][swan.df.wide[,i] %in% status1.codes] = "1"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status2.codes] = "2"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status3.codes] = "3"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status4.codes] = "4"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status5.codes] = "5"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status6.codes] = "6"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status7.codes] = "7"
+  swan.df.wide[,i][swan.df.wide[,i] %in% status8.codes] = "8"
+}
+
+##estrogen
+for (i in 13:22)
+{
+  swan.df.wide[,i] = as.character(swan.df.wide[,i])
+  swan.df.wide[,i][swan.df.wide[,i] == "(2) Yes" | swan.df.wide[,i] == "(2) 2: Yes"] = "Yes"
+  swan.df.wide[,i][swan.df.wide[,i] == "(1) No" | swan.df.wide[,i] == "(1) 1: No"] = "No"
+  
+}
+
+##endometriosis
+for (i in 23:31)
+{
+  swan.df.wide[,i] = as.character(swan.df.wide[,i])
+  swan.df.wide[,i][swan.df.wide[,i] == "(2) Yes" | swan.df.wide[,i] == "(2) 2: Yes"] = 1
+  swan.df.wide[,i][swan.df.wide[,i] == "(1) No" | swan.df.wide[,i] == "(1) 1: No"] = 0
+}
+
+#removing observations with NA
+cols = as.vector(colnames(swan.df.wide))
+swan.df.wide = swan.df.wide[complete.cases(swan.df.wide[cols]), cols]
+
+#########################################
+##LONG FORMAT 
+
+#remove visit1 data since no observations for endometriosis
+swan.df.wide = swan.df.wide[, -c(3,13)]
+
+#reshape to long
+swan.df.long = reshape(data = swan.df.wide, 
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(3:11), c(12:20), c(21:29)), 
+                       v.names = c("status", "estrogen", "endo"), 
+                       timevar = "visit",
+                       times = c(2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
+
+swan.df.long$visit = as.factor(swan.df.long$visit)
+swan.df.long$estrogen = as.factor(swan.df.long$estrogen)
+swan.df.long$status = as.factor(swan.df.long$status)
+swan.df.long$endo = as.numeric(swan.df.long$endo)
+swan.df.long$RACE = as.factor(swan.df.long$RACE)
+swan.df.long$SWANID = as.factor(swan.df.long$SWANID)
+
+#######################
+#GEEPACK (https://faculty.washington.edu/heagerty/Courses/b571/homework/geepack-paper.pdf)
+#install.packages("geepack")
+library(geepack)
+
+
+##different correlation structures
+geemod1 = geeglm(endo ~ 1 + estrogen + status + RACE, 
+                id = SWANID,
+                data = swan.df.long, 
+                family = "binomial", 
+                corstr = "independence")
+summary(geemod1)
+
+geemod2 = geeglm(endo ~ 1 + estrogen + status + RACE, 
+                 id = SWANID,
+                 data = swan.df.long, 
+                 family = "binomial", 
+                 corstr = "ar1")
+summary(geemod2)
+
+##remove race
+geemod3 = geeglm(endo ~ 1 + estrogen + status, 
+                 id = SWANID,
+                 data = swan.df.long, 
+                 family = "binomial", 
+                 corstr = "ar1")
+anova(geemod2, geemod3)
