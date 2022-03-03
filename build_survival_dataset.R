@@ -112,6 +112,103 @@ for (i in 14:24)
   swan.df.wide[,i][swan.df.wide[,i] %in% status8.codes] = "8"
 }
 
+##RESHAPE TO LONG
+#diabetes not recorded at baseline 
+swan.df.long = reshape(data = swan.df.wide, 
+                                idvar = c("SWANID", "RACE"), 
+                                varying = list(c(4:13), c(15:24), c(26:35), c(36:45)), 
+                                v.names = c("age", "status", "income", "diabetes"), 
+                                timevar = "visit",
+                                times = c(1,2,3,4,5,6,7,8,9,10), 
+                                direction = "long")
+
+#reorder long
+swan.df.long = arrange(swan.df.long, SWANID)
+rownames(swan.df.long) = c(1:nrow(swan.df.long))
+colnames(swan.df.long) = c("SWANID", "race", "base_age", "base_status", 
+                          "base_income", "visit", "age", "status", "income", "diabetes")
 
 ##FIND TIME TO EVENT
+##need:
+# ID
+# RACE
+# start time, age at baseline
+# end time/event time, age at event OR end of study
+# event status
+surv.df = data.frame("SWANID" = c(), "base_status" = c(), "base_income" = c(), "race" = c(), 
+                     "start" = c(), "end" = c(), "event" = c())
+for (i in 1:nrow(swan.df.long))
+{
+  id.curr = swan.df.long$SWANID[i]
+  j = i-1
+  id.prev = 0
+  
+  if(j != 0)
+  {
+    id.prev = swan.df.long$SWANID[j]
+  }
+  
+  if (id.curr != id.prev) #add new row to the survival data frame
+  {
+    surv.df = rbind(surv.df, data.frame("SWANID" = id.curr,
+                                        "base_status" = swan.df.long$base_status[i],
+                                        "base_income" = swan.df.long$base_income[i],
+                                        "race" = swan.df.long$race[i],
+                                        "start" = swan.df.long$age[i],
+                                        "end" = swan.df.long$age[i],
+                                        "event" = swan.df.long$diabetes[i]))
+  }
+  else #get row of the survival data frame
+  {
+    
+    #if the event has already occurred, do not update event and age, next iteration
+    if (swan.df.long$diabetes[j] == 1 & !is.na(swan.df.long$diabetes[j]))
+    {
+      next
+    }
+    
+    #if event has not already occurred update
+    if (swan.df.long$diabetes[j] == 0 & !is.na(swan.df.long$diabetes[j]))
+    {
+      #if there has been a change, update event, end, and censoring
+      if (swan.df.long$diabetes[i] == 1 & !is.na(swan.df.long$diabetes[i]))
+      {
+        surv.df$end[surv.df$SWANID == id.curr] = swan.df.long$age[i]
+        surv.df$event[surv.df$SWANID == id.curr] = 1
+      }
+      #if there has not been a change, update age and check whether to censor
+      else if (swan.df.long$diabetes[i] == 0 & !is.na(swan.df.long$diabetes[i]))
+      {
+        surv.df$end[surv.df$SWANID == id.curr] = swan.df.long$age[i]
+      }
+    }
+  }
+}
 
+#remove NA values
+surv.df = surv.df[!is.na(surv.df$event),]
+#remove values where no time passed
+surv.df = surv.df[surv.df$start != surv.df$end,]
+
+##censor data
+censored = rep(0, nrow(surv.df))
+for (i in 1:nrow(surv.df))
+{
+  if(is.na(surv.df$event[i]) | surv.df$event[i] == 0)
+  {
+    censored[i] = 1
+  }
+}
+
+
+surv.df.censored = cbind(surv.df, censored)
+surv.df.uncensored = surv.df.uncensored[surv.df.uncensored$censored == 0,]
+
+library(survival)
+library(survminer)
+surv.obj = Surv(time = surv.df.censored$start, time2 = surv.df.censored$end, event = surv.df.censored$event == 1)
+summary(surv.obj)
+plot(survfit(surv.obj ~ 1))
+ggsurvplot(survfit(surv.obj ~ 1), surv.df.censored, conf.int=FALSE)
+
+     
