@@ -37,11 +37,12 @@ swan.df = merge(swan.df, visit10, by = "SWANID")
 
 
 swan.df = dplyr::select(swan.df, SWANID, RACE, 
-                     STATUS1, STATUS2, STATUS3, STATUS4, STATUS5, STATUS6, 
+                     STATUS2, STATUS3, STATUS4, STATUS5, STATUS6, 
                      STATUS7, STATUS8, STATUS9, STATUS10,
-                     ESTROG11, ESTROG12, ESTROG13, ESTROG14, ESTROG15,
+                     ESTROG12, ESTROG13, ESTROG14, ESTROG15,
                      ESTROG16, ESTROG17, ESTROG18, ESTROG19, ESTROG110,
-                     ENDO2, ENDO3, ENDO4, ENDO5, ENDO6, ENDO7, ENDO8, ENDO9, ENDO10)
+                     ENDO2, ENDO3, ENDO4, ENDO5, ENDO6, ENDO7, ENDO8, ENDO9, ENDO10,
+                     BMI2, BMI3, BMI4, BMI5, BMI6, BMI7, BMI8, BMI9, BMI10)
 
 #remove visits to save memory
 rm(base, visit1, visit2, visit3, visit4, visit5, visit6, visit7, visit8, visit9, visit10)
@@ -68,7 +69,7 @@ status7.codes = c("(7) Unknown due to hormone therapy use", "(7) Unknown due to 
 status8.codes = c("(8) Unknown due to hysterectomy", "(8) 8: Unknown due to hysterectomy")
 
 
-for (i in 3:12)
+for (i in 3:11)
 {
   swan.df.wide[,i] = as.character(swan.df.wide[,i])
   swan.df.wide[,i][swan.df.wide[,i] %in% status1.codes] = "1"
@@ -82,7 +83,7 @@ for (i in 3:12)
 }
 
 ##estrogen
-for (i in 13:22)
+for (i in 12:20)
 {
   swan.df.wide[,i] = as.character(swan.df.wide[,i])
   swan.df.wide[,i][swan.df.wide[,i] == "(2) Yes" | swan.df.wide[,i] == "(2) 2: Yes"] = "Yes"
@@ -91,29 +92,44 @@ for (i in 13:22)
 }
 
 ##endometriosis
-for (i in 23:31)
+for (i in 21:29)
 {
   swan.df.wide[,i] = as.character(swan.df.wide[,i])
   swan.df.wide[,i][swan.df.wide[,i] == "(2) Yes" | swan.df.wide[,i] == "(2) 2: Yes"] = 1
   swan.df.wide[,i][swan.df.wide[,i] == "(1) No" | swan.df.wide[,i] == "(1) 1: No"] = 0
 }
 
-
 #########################################
-##LONG FORMAT (complete) swan.df.long
+##LONG FORMAT (complete) swan.df.long.complete
 
 #removing observations with NA
 cols = as.vector(colnames(swan.df.wide))
 swan.df.wide.complete = swan.df.wide[complete.cases(swan.df.wide[cols]), cols]
 
-#remove visit1 data since no observations for endometriosis
-swan.df.wide.complete = swan.df.wide.complete[, -c(3,13)]
-
 #reshape to long
 swan.df.long.complete = reshape(data = swan.df.wide.complete, 
                        idvar = c("SWANID", "RACE"), 
-                       varying = list(c(3:11), c(12:20), c(21:29)), 
-                       v.names = c("status", "estrogen", "endo"), 
+                       varying = list(c(3:11), c(12:20), c(21:29), c(30:38)), 
+                       v.names = c("status", "estrogen", "endo", "bmi"), 
+                       timevar = "visit",
+                       times = c(2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
+
+swan.df.long.complete$visit = as.factor(swan.df.long.complete$visit)
+swan.df.long.complete$estrogen = as.factor(swan.df.long.complete$estrogen)
+swan.df.long.complete$status = as.factor(swan.df.long.complete$status)
+swan.df.long.complete$endo = as.numeric(swan.df.long.complete$endo)
+swan.df.long.complete$RACE = as.factor(swan.df.long.complete$RACE)
+swan.df.long.complete$SWANID = as.factor(swan.df.long.complete$SWANID)
+
+
+##LONG FORMAT (incomplete) swan.df.long
+
+#reshape to long
+swan.df.long = reshape(data = swan.df.wide, 
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(3:11), c(12:20), c(21:29), c(30:38)), 
+                       v.names = c("status", "estrogen", "endo", "bmi"), 
                        timevar = "visit",
                        times = c(2,3,4,5,6,7,8,9,10), 
                        direction = "long")
@@ -126,33 +142,7 @@ swan.df.long$RACE = as.factor(swan.df.long$RACE)
 swan.df.long$SWANID = as.factor(swan.df.long$SWANID)
 
 
-##LONG FORMAT (incomplete) swan.df.long.na
-
-#remove visit1 data since no observations for endometriosis
-swan.df.wide = swan.df.wide[, -c(3,13)]
-
-#reshape to long
-swan.df.long.na = reshape(data = swan.df.wide, 
-                       idvar = c("SWANID", "RACE"), 
-                       varying = list(c(3:11), c(12:20), c(21:29)), 
-                       v.names = c("status", "estrogen", "endo"), 
-                       timevar = "visit",
-                       times = c(2,3,4,5,6,7,8,9,10), 
-                       direction = "long")
-
-swan.df.long.na$visit = as.factor(swan.df.long.na$visit)
-swan.df.long.na$estrogen = as.factor(swan.df.long.na$estrogen)
-swan.df.long.na$status = as.factor(swan.df.long.na$status)
-swan.df.long.na$endo = as.numeric(swan.df.long.na$endo)
-swan.df.long.na$RACE = as.factor(swan.df.long.na$RACE)
-swan.df.long.na$SWANID = as.factor(swan.df.long.na$SWANID)
-
-################
-##rename objects
-swan.df.wide.na = swan.df.wide #includes na values
-swan.df.wide = swan.df.wide.complete
-
 ##remove unnecessary objects
 rm(cols, i, status1.codes, status2.codes, status3.codes, status4.codes,
-   status5.codes, status6.codes, status7.codes, status8.codes, swan.df.wide.complete)
+   status5.codes, status6.codes, status7.codes, status8.codes)
 

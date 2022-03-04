@@ -11,10 +11,10 @@ library(lme4)
 #LOAD DATA
 source("build_dataset.R")
 #swan.df: wide dataset of the variables of interest for visits 1-10
-#swan.df.wide: wide dataset of variables of interest without NA values for visits 2-10
-#swan.df.long: long dataset of variables of interest without NA values for visits 2-10
-#swan.df.wide.na: wide dataset of variables of interest with NA values for visits 2-10
-#swan.df.long.na: long dataset of variables of interest with NA values for visits 2-10
+#swan.df.wide: wide dataset of variables of interest with NA values for visits 2-10
+#swan.df.long: long dataset of variables of interest with NA values for visits 2-10
+#swan.df.wide.complete: wide dataset of variables of interest without values for visits 2-10
+#swan.df.long.complete: long dataset of variables of interest without values for visits 2-10
 
 
 #########################
@@ -26,16 +26,16 @@ source("build_dataset.R")
 ###########################
 ##GEE WITHOUT MISSING VALUES (swan.df.long)
 ##different correlation structures
-geemod1 = geeglm(endo ~ 1 + estrogen + status + RACE, 
+geemod1 = geeglm(endo ~ 1 + estrogen + status + RACE + bmi, 
                  id = SWANID,
-                 data = swan.df.long, 
+                 data = swan.df.long.complete, 
                  family = "binomial", 
                  corstr = "independence")
 summary(geemod1)
 
-geemod2 = geeglm(endo ~ 1 + estrogen + status + RACE, 
+geemod2 = geeglm(endo ~ 1 + estrogen + status + RACE + bmi, 
                  id = SWANID,
-                 data = swan.df.long, 
+                 data = swan.df.long.complete, 
                  family = "binomial", 
                  corstr = "ar1")
 summary(geemod2)
