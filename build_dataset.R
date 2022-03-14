@@ -42,7 +42,8 @@ swan.df = dplyr::select(swan.df, SWANID, RACE,
                      ESTROG12, ESTROG13, ESTROG14, ESTROG15,
                      ESTROG16, ESTROG17, ESTROG18, ESTROG19, ESTROG110,
                      ENDO2, ENDO3, ENDO4, ENDO5, ENDO6, ENDO7, ENDO8, ENDO9, ENDO10,
-                     BMI2, BMI3, BMI4, BMI5, BMI6, BMI7, BMI8, BMI9, BMI10)
+                     BMI2, BMI3, BMI4, BMI5, BMI6, BMI7, BMI8, BMI9, BMI10, 
+                     AGE2, AGE3, AGE4, AGE5, AGE6, AGE7, AGE8, AGE9, AGE10)
 
 #remove visits to save memory
 rm(base, visit1, visit2, visit3, visit4, visit5, visit6, visit7, visit8, visit9, visit10)
@@ -109,8 +110,8 @@ swan.df.wide.complete = swan.df.wide[complete.cases(swan.df.wide[cols]), cols]
 #reshape to long
 swan.df.long.complete = reshape(data = swan.df.wide.complete, 
                        idvar = c("SWANID", "RACE"), 
-                       varying = list(c(3:11), c(12:20), c(21:29), c(30:38)), 
-                       v.names = c("status", "estrogen", "endo", "bmi"), 
+                       varying = list(c(3:11), c(12:20), c(21:29), c(30:38), c(39:47)), 
+                       v.names = c("status", "estrogen", "endo", "bmi", "age"), 
                        timevar = "visit",
                        times = c(2,3,4,5,6,7,8,9,10), 
                        direction = "long")
@@ -128,8 +129,8 @@ swan.df.long.complete$SWANID = as.factor(swan.df.long.complete$SWANID)
 #reshape to long
 swan.df.long = reshape(data = swan.df.wide, 
                        idvar = c("SWANID", "RACE"), 
-                       varying = list(c(3:11), c(12:20), c(21:29), c(30:38)), 
-                       v.names = c("status", "estrogen", "endo", "bmi"), 
+                       varying = list(c(3:11), c(12:20), c(21:29), c(30:38), c(39:47)), 
+                       v.names = c("status", "estrogen", "endo", "bmi", "age"), 
                        timevar = "visit",
                        times = c(2,3,4,5,6,7,8,9,10), 
                        direction = "long")

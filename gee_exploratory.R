@@ -1,33 +1,27 @@
-##BUILD DATASET FOR SURVIVAL ANALYSIS
 ##############################################
 ##LIBRARIES
+#install.packages("dplyr")
+#install.packages("geepack")
+#install.packages("ggplot2")
 library(dplyr)
+library(geepack)
+library(ggplot2)
 
 ##LOAD DATA
 source("load_swan_data.R")
 
 ##GET VARIABLES OF INTEREST
 df.base = base[,c("SWANID", "AGE0", "RACE", "STATUS0", "INCOME0")]
-df.1 = visit1[,c("SWANID",  "AGE1", "STATUS1", 
-                 "INCOME1", "DIABETE1")]
-df.2 = visit2[,c("SWANID", "AGE2", "STATUS2", 
-                 "INCOME2", "DIABETE2")]
-df.3 = visit3[,c("SWANID", "AGE3", "STATUS3", 
-                 "INCOME3", "DIABETE3")]
-df.4 = visit4[,c("SWANID", "AGE4", "STATUS4", 
-                 "INCOME4", "DIABETE4")]
-df.5 = visit5[,c("SWANID", "AGE5", "STATUS5", 
-                "INCOME5", "DIABETE5")]
-df.6 = visit6[,c("SWANID", "AGE6", "STATUS6", 
-                 "INCOME6", "DIABETE6")]
-df.7 = visit7[,c("SWANID", "AGE7", "STATUS7", 
-                 "INCOME7", "DIABETE7")]
-df.8 = visit8[,c("SWANID","AGE8","STATUS8", 
-                 "INCOME8", "DIABETE8")]
-df.9 = visit9[,c("SWANID", "AGE9", "STATUS9", 
-                 "INCOME9", "DIABETE9")]
-df.10 = visit10[,c("SWANID", "AGE10", "STATUS10", 
-                 "INCOME10", "DIABETE10")]
+df.1 = visit1[,c("SWANID",  "AGE1", "STATUS1", "INCOME1", "DIABETE1")]
+df.2 = visit2[,c("SWANID", "AGE2", "STATUS2",  "INCOME2", "DIABETE2")]
+df.3 = visit3[,c("SWANID", "AGE3", "STATUS3", "INCOME3", "DIABETE3")]
+df.4 = visit4[,c("SWANID", "AGE4", "STATUS4", "INCOME4", "DIABETE4")]
+df.5 = visit5[,c("SWANID", "AGE5", "STATUS5", "INCOME5", "DIABETE5")]
+df.6 = visit6[,c("SWANID", "AGE6", "STATUS6", "INCOME6", "DIABETE6")]
+df.7 = visit7[,c("SWANID", "AGE7", "STATUS7", "INCOME7", "DIABETE7")]
+df.8 = visit8[,c("SWANID","AGE8","STATUS8", "INCOME8", "DIABETE8")]
+df.9 = visit9[,c("SWANID", "AGE9", "STATUS9", "INCOME9", "DIABETE9")]
+df.10 = visit10[,c("SWANID", "AGE10", "STATUS10", "INCOME10", "DIABETE10")]
 merge.df = merge(df.base, df.1, by = "SWANID")
 merge.df = merge(merge.df, df.2, by = "SWANID", all.x = "TRUE")
 merge.df = merge(merge.df, df.3, by = "SWANID", all.x = "TRUE")
@@ -112,21 +106,46 @@ for (i in 14:24)
   swan.df.wide[,i][swan.df.wide[,i] %in% status8.codes] = "8"
 }
 
-##RESHAPE TO LONG
+##GET LONG FORMAT DATASET
 #diabetes not recorded at baseline 
 swan.df.long = reshape(data = swan.df.wide, 
-                                idvar = c("SWANID", "RACE"), 
-                                varying = list(c(4:13), c(15:24), c(26:35), c(36:45)), 
-                                v.names = c("age", "status", "income", "diabetes"), 
-                                timevar = "visit",
-                                times = c(1,2,3,4,5,6,7,8,9,10), 
-                                direction = "long")
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(4:13), c(15:24), c(26:35), c(36:45)), 
+                       v.names = c("age", "status", "income", "diabetes"), 
+                       timevar = "visit",
+                       times = c(1,2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
 
 #reorder long
 swan.df.long = arrange(swan.df.long, SWANID)
 rownames(swan.df.long) = c(1:nrow(swan.df.long))
 colnames(swan.df.long) = c("SWANID", "race", "base_age", "base_status", 
-                          "base_income", "visit", "age", "status", "income", "diabetes")
+                           "base_income", "visit", "age", "status", "income", "diabetes")
+
+#GET LONG DATASET FOR COMPLETE OBSERVATIONS (NO NA OBSERVATIONS/BALANCED REPEATED MEASURES)
+cols = as.vector(colnames(swan.df.wide))
+swan.df.wide.complete = swan.df.wide[complete.cases(swan.df.wide[cols]), cols]
+
+swan.df.long.complete = reshape(data = swan.df.wide.complete, 
+                       idvar = c("SWANID", "RACE"), 
+                       varying = list(c(4:13), c(15:24), c(26:35), c(36:45)), 
+                       v.names = c("age", "status", "income", "diabetes"), 
+                       timevar = "visit",
+                       times = c(1,2,3,4,5,6,7,8,9,10), 
+                       direction = "long")
+
+swan.df.long.complete = arrange(swan.df.long.complete, SWANID)
+rownames(swan.df.long.complete) = c(1:nrow(swan.df.long.complete))
+colnames(swan.df.long.complete) = c("SWANID", "race", "base_age", "base_status", 
+                           "base_income", "visit", "age", "status", "income", "diabetes")
+
+
+##REMOVE EXTRANEOUS VARIABLES
+rm(income1.codes, income2.codes, income3.codes, income4.codes,
+   i, status1.codes, status2.codes, status3.codes,
+   status4.codes, status5.codes, status6.codes, status7.codes,
+   status8.codes, diabetes.no.codes, diabetes.yes.codes, cols)
+
 
 ##FIND TIME TO EVENT
 ##need:
@@ -185,25 +204,34 @@ for (i in 1:nrow(swan.df.long))
   }
 }
 
-#remove NA values
+
+
+
+
+
+###################################
+#EXPLORATORY ANALYSIS (CHARTS/PLOTS/CROSSTABS)
+
+##incidence of diabetes by visit
+xtabs(~diabetes + visit, data = swan.df.long)
+xtabs(~diabetes + visit, data = swan.df.long.complete)
+
+##
 surv.df = surv.df[!is.na(surv.df$event),]
-#remove values where no time passed
-surv.df = surv.df[surv.df$start != surv.df$end,]
+mean(surv.df[surv.df$event=="1",]$end)
+##52.617
 
-##censor data
-censored = rep(0, nrow(surv.df))
-for (i in 1:nrow(surv.df))
-{
-  if(is.na(surv.df$event[i]) | surv.df$event[i] == 0)
-  {
-    censored[i] = 1
-  }
-}
+##RACE demographics balanced dataset
+xtabs(~RACE, swan.df.wide.complete)
+xtabs(~diabetes + visit + race, data = swan.df.long.complete)
 
-surv.df.censored = cbind(surv.df, censored)
 
-rm(income1.codes, income2.codes, income3.codes, income4.codes,
-   i, j, id.curr, id.prev, status1.codes, status2.codes, status3.codes,
-   status4.codes, status5.codes, status6.codes, status7.codes,
-   status8.codes, diabetes.no.codes, diabetes.yes.codes, censored)
-     
+##RACE demographics unbalanced dataset
+xtabs(~RACE, swan.df.wide)
+xtabs(~diabetes + visit + race, data = swan.df.long)
+
+##observations are not missing at random
+
+
+
+
