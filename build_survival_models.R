@@ -16,9 +16,8 @@ windowsFonts(A = windowsFont("Times New Roman"))
 surv.obj = Surv(time = surv.df.rc$start, 
                 time2 = surv.df.rc$end, 
                 event = surv.df.rc$event == 1)
-summary(surv.obj)
 
-
+#KM overall
 surv.fit.full = survfit(surv.obj ~ 1)
 plot(surv.fit.full, 
      xlab = "Age", 
@@ -38,6 +37,7 @@ ggsurvplot(surv.fit.full,
            break.x.by = 2,
            fontsize = 3)
 
+#KM by race
 surv.fit.race = survfit(surv.obj ~ surv.df.rc$race)
 summary(surv.fit.race)
 plot(surv.fit.race, 
@@ -67,6 +67,35 @@ plot.race = ggsurvplot(surv.fit.race,
            break.x.by = 2, 
            fontsize = 3)
 print(plot.race)
+
+#KM by insurance
+surv.fit.ins = survfit(surv.obj ~ surv.df.rc$insured)
+summary(surv.fit.ins)
+plot(surv.fit.ins, 
+     xlab = "Age", 
+     ylab = "Survival Probability", 
+     main = "Diabetes Incidence Survival by Insurance", 
+     xlim = c(50,60))
+plot.ins = ggsurvplot(surv.fit.ins, 
+                       data = surv.df.rc, 
+                       xlab = "Age", 
+                       ylab = "Survival Probability", 
+                       title = "Diabetes Incidence Survival by Health Insurance Status", 
+                       xlim = c(50,60),
+                       ylim = c(0,1),
+                       palette = c("#E69F00", "#56B4E9"),
+                       linetype = 1, 
+                       legend = 'right',
+                       legend.labs = c("Uninsured", "Insured"),
+                       legend.title = "Health Insurance Status",
+                       ggtheme = theme_classic2(base_size=12, base_family = "A"),
+                       font.family = "A",
+                       font.legend = 9,
+                       risk.table = TRUE,
+                       risk.table.height = .5,
+                       break.x.by = 2, 
+                       fontsize = 3)
+print(plot.ins)
 
 
 
