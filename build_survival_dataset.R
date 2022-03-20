@@ -7,7 +7,9 @@ library(dplyr)
 source("load_swan_data.R")
 
 ##GET VARIABLES OF INTEREST
-df.base = base[,c("SWANID", "AGE0", "RACE", "STATUS0", "INCOME0")]
+df.base = base[,c("SWANID", "AGE0", "RACE", "STATUS0", "INCOME0", 
+                  "PREPAID0", "OTHRPRI0", "MEDICAR0", "MEDICAI0", 
+                  "MILITAR0", "NOINSUR0", "OTHINSU0")]
 df.1 = visit1[,c("SWANID",  "AGE1", "STATUS1", 
                  "INCOME1", "DIABETE1")]
 df.2 = visit2[,c("SWANID", "AGE2", "STATUS2", 
@@ -40,12 +42,14 @@ merge.df = merge(merge.df, df.9, by = "SWANID", all.x = "TRUE")
 merge.df = merge(merge.df, df.10, by = "SWANID", all.x = "TRUE")
 
 #reorder columns
+merge.df = merge.df[,c (1:5, 13:52, 6:12)]
 swan.df.wide = merge.df[, c(1,
                             3,
                             2,6,10,14,18,22,26,30,34,38,42,
                             4,7,11,15,19,23,27,31,35,39,43,
                             5,8,12,16,20,24,28,32,36,40,44,
-                            9,13,17,21,25,29,33,37,41,45)]
+                            9,13,17,21,25,29,33,37,41,45,
+                            46:52)]
 
 ######################################
 
@@ -112,10 +116,26 @@ for (i in 14:24)
   swan.df.wide[,i][swan.df.wide[,i] %in% status8.codes] = "8"
 }
 
+
+#Clean and dichotomize insurance data
+insure.no.codes = c("(1) No")
+insure.yes.codes = c("(2) Yes")
+
+for (i in 46:52)
+{
+  swan.df.wide[,i] = as.character(swan.df.wide[,i])
+  swan.df.wide[,i][swan.df.wide[,i] %in% insure.no.codes] = "0"
+  swan.df.wide[,i][swan.df.wide[,i] %in% insure.yes.codes] = "1"
+}
+
+#dichotomize
+swan.df.wide$insured = ifelse(swan.df.wide$NOINSUR0 == "1", "No", "Yes")
+
+
 ##RESHAPE TO LONG
 #diabetes not recorded at baseline 
 swan.df.long = reshape(data = swan.df.wide, 
-                                idvar = c("SWANID", "RACE"), 
+                                idvar = c("SWANID"), 
                                 varying = list(c(4:13), c(15:24), c(26:35), c(36:45)), 
                                 v.names = c("age", "status", "income", "diabetes"), 
                                 timevar = "visit",
@@ -124,9 +144,10 @@ swan.df.long = reshape(data = swan.df.wide,
 
 #reorder long
 swan.df.long = arrange(swan.df.long, SWANID)
+swan.df.long = swan.df.long[, -(6:12)] ##keep only dichotomized insurance
 rownames(swan.df.long) = c(1:nrow(swan.df.long))
 colnames(swan.df.long) = c("SWANID", "race", "base_age", "base_status", 
-                          "base_income", "visit", "age", "status", "income", "diabetes")
+                          "base_income", "insured", "visit", "age", "status", "income", "diabetes")
 
 ##FIND TIME TO EVENT
 ##need:
@@ -135,8 +156,14 @@ colnames(swan.df.long) = c("SWANID", "race", "base_age", "base_status",
 # start time, age at baseline
 # end time/event time, age at event OR end of study
 # event status
-surv.df = data.frame("SWANID" = c(), "base_status" = c(), "base_income" = c(), "race" = c(), 
-                     "start" = c(), "end" = c(), "event" = c())
+surv.df = data.frame("SWANID" = c(), 
+                     "base_status" = c(), 
+                     "base_income" = c(), 
+                     "insured" = c(), 
+                     "race" = c(), 
+                     "start" = c(), 
+                     "end" = c(), 
+                     "event" = c())
 for (i in 1:nrow(swan.df.long))
 {
   id.curr = swan.df.long$SWANID[i]
@@ -153,6 +180,7 @@ for (i in 1:nrow(swan.df.long))
     surv.df = rbind(surv.df, data.frame("SWANID" = id.curr,
                                         "base_status" = swan.df.long$base_status[i],
                                         "base_income" = swan.df.long$base_income[i],
+                                        "insured" = swan.df.long$insured[i],
                                         "race" = swan.df.long$race[i],
                                         "start" = swan.df.long$age[i],
                                         "end" = swan.df.long$age[i],
@@ -205,5 +233,6 @@ surv.df.censored = cbind(surv.df, censored)
 rm(income1.codes, income2.codes, income3.codes, income4.codes,
    i, j, id.curr, id.prev, status1.codes, status2.codes, status3.codes,
    status4.codes, status5.codes, status6.codes, status7.codes,
-   status8.codes, diabetes.no.codes, diabetes.yes.codes, censored)
+   status8.codes, diabetes.no.codes, diabetes.yes.codes, censored,
+   insure.no.codes, insure.yes.codes)
      
