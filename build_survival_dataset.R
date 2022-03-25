@@ -235,4 +235,30 @@ rm(income1.codes, income2.codes, income3.codes, income4.codes,
    status4.codes, status5.codes, status6.codes, status7.codes,
    status8.codes, diabetes.no.codes, diabetes.yes.codes, censored,
    insure.no.codes, insure.yes.codes)
-     
+    
+##GROUP BY AGE
+hist(surv.df$start)
+summary(surv.df$start)
+
+ageGroup = rep(NA, nrow(surv.df))
+
+for (i in 1:length(ageGroup))
+{
+  if (surv.df$start[i] >= 42 & surv.df$start[i] <= 45)
+  {
+    ageGroup[i] = "42_45"
+  }
+  else if (surv.df$start[i] >= 46 & surv.df$start[i] <= 49)
+  {
+    ageGroup[i] = "46_49"
+  }
+  else if (surv.df$start[i] >= 50 & surv.df$start[i] <= 54)
+  {
+    ageGroup[i] = "50_54"
+  }
+}
+
+surv.df = cbind(surv.df, ageGroup)
+surv.df.censored = cbind(surv.df.censored, ageGroup)
+
+rm(i, ageGroup)

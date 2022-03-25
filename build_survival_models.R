@@ -1,3 +1,5 @@
+##SET WORKING DIRECTORY TO SOURCE FILE LOCATION
+
 ##LIBRARIES
 library(survival)
 library(survminer)
