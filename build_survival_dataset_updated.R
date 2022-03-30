@@ -109,7 +109,8 @@ swan.df.wide$insured = ifelse(swan.df.wide$NOINSUR0 == "1", "No", "Yes")
 swan.df.wide = swan.df.wide[,-c(14:24)]
 
 ##RESHAPE TO LONG
-#diabetes not recorded at baseline 
+#diabetes not recorded at baseline so start of study will be considered the first visit,
+#except for baseline study entry data
 
 swan.df.long = reshape(data = swan.df.wide, 
                                 idvar = c("SWANID"), 
@@ -156,10 +157,10 @@ for (i in 1:nrow(swan.df.long))
   {
     surv.df = rbind(surv.df, data.frame("SWANID" = id.curr,
                                         "base_income" = swan.df.long$base_income[i],
-                                        "base_age" = swan.df.long$base_age[i],
+                                        "base_age" = swan.df.long$age[i],
                                         "insured" = swan.df.long$insured[i],
                                         "race" = swan.df.long$race[i],
-                                        "start" = swan.df.long$base_age[i],
+                                        "start" = swan.df.long$age[i],
                                         "end" = swan.df.long$age[i],
                                         "event" = swan.df.long$diabetes[i]))
   }
@@ -196,7 +197,7 @@ surv.df = surv.df[!is.na(surv.df$event),]
 #remove NA base age
 surv.df = surv.df[!is.na(surv.df$base_age),]
 
-#remove values where no time passed
+#remove values where no time passed, since these individuals had diabetes at t = 0
 surv.df = surv.df[surv.df$base_age != surv.df$end,]
 
 #t2event
@@ -237,9 +238,9 @@ for (i in 1:length(age_group))
   {
     age_group[i] = "46_49"
   }
-  else if (surv.df$base_age[i] >= 50 & surv.df$base_age[i] <= 53)
+  else if (surv.df$base_age[i] >= 50 & surv.df$base_age[i] <= 54)
   {
-    age_group[i] = "50_53"
+    age_group[i] = "50_54"
   }
 }
 
@@ -248,6 +249,18 @@ surv.df = surv.df[,c(1:4, 9, 5:8)]
 
 rm(i, age_group, swan.df.long, swan.df.wide)
 
+colnames(surv.df) = c("SWANID", "race", "income", "t0_age", 
+                      "age_group", "insured", "t2event", "event", "censored")
 
+##surv.df
+#time 0 is considered the first visit of the study
+#race was assessed during a baseline admission study
+#income was assessed during a baseline admission study
+#t0_age was the the age assessed at visit 1, which is considered time 0
+#insurance status was assessed during a baseline admission study
+#t2event was calculated from visits 1 to 10 based on the first time the
+#     individual reported having been diagnosed or treated for diabetes
+#event is the incidence of diabetes
+#censorship was calculated based on whether the event occurred by the end of the study
 
 
