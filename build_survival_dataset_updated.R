@@ -101,6 +101,7 @@ for (i in 46:52)
   swan.df.wide[,i][swan.df.wide[,i] %in% insure.yes.codes] = "1"
 }
 
+
 #dichotomize
 swan.df.wide$insured = ifelse(swan.df.wide$NOINSUR0 == "1", "No", "Yes")
 
@@ -196,6 +197,9 @@ surv.df = surv.df[!is.na(surv.df$event),]
 
 #remove NA base age
 surv.df = surv.df[!is.na(surv.df$base_age),]
+
+#remove NA insurance status
+surv.df = surv.df[!is.na(surv.df$insured),]
 
 #remove values where no time passed, since these individuals had diabetes at t = 0
 surv.df = surv.df[surv.df$base_age != surv.df$end,]

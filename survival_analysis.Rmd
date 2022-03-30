@@ -1,3 +1,16 @@
+---
+title: "Survival Analysis of Diabetes Incidence"
+author: "Lauren Bastian"
+date: "3/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries and dataset, include = FALSE, fig.show = "hide", results = "hide"}
 ##SET WORKING DIRECTORY TO SOURCE FILE LOCATION
 
 ##LIBRARIES
@@ -7,7 +20,6 @@
 library(survival)
 library(ggplot2)
 library(survminer)
-
 
 ##LOAD DATA
 source("build_survival_dataset_updated.R")
@@ -20,11 +32,17 @@ surv.df$age_group = as.factor(surv.df$age_group)
 surv.df$insured = as.factor(surv.df$insured)
 surv.df$event = as.numeric(surv.df$event)
 
-######################################
+```
 
-##DESCRIPTIVE STATISTICS
+Research Objective
+--------------------
+How does insurance status affect the incidence of diabetes among middle-aged American women over nine years? Does this affect remain after controlling for race and household income and age group?
 
+Note: Consider common covariates: age, BMI, etc
 
+Descriptive Statistics
+--------------------------
+```{r descriptives, echo = FALSE}
 ##MEAN AGE AT t = 0
 print("Mean Age at t = 0")
 mean(surv.df$t0_age) #46.92 years at t = 0 (visit 1)
@@ -50,11 +68,12 @@ table(surv.df$income)
 ##EVENT INCIDENCE
 table(surv.df$event)
 
+```
 
-########################################
+Exploratory Analysis
+-------------------
 
-##EXPLORATORY
-
+```{r exploratory, echo = FALSE}
 ##FACTOR CROSS TABS
 ftable(xtabs(~race + income + insured, data = surv.df))
 
@@ -77,12 +96,27 @@ xtabs(~income + event, data = surv.df)[,2] /
   xtabs(~income + event, data = surv.df)[,1]
 #incidence by end of study appears proportionally higher for lowest income
 
+```
 
-######################################
+Cox Proportional Hazards Models
+--------------------------
 
-##COX MODELS
+```{r Create surv object in surv.df , echo = FALSE}
+surv.df$surv_obj = with(surv.df, Surv(t2event, event))
+```
 
+```{r insurance only, echo = FALSE}
+##MODEL WITH ONLY INSURANCE STRATIFIED BY AGE GROUP
+dbts.mod.ins= coxph(surv_obj ~ insured + strata(age_group), data = surv.df)
+dbts.mod.ins
 
+##Assess PH Assumption
+```
 
+```{r all factors, echo = FALSE}
+##BUILD MODEL WITH ALL FACTORS OF INTEREST
+dbts.mod.all = coxph(surv_obj ~ insured + race + income + strata(age_group), data = surv.df)
+dbts.mod.all
 
-
+##Assess PH Assumption
+```
