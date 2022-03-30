@@ -159,7 +159,7 @@ for (i in 1:nrow(swan.df.long))
                                         "base_age" = swan.df.long$base_age[i],
                                         "insured" = swan.df.long$insured[i],
                                         "race" = swan.df.long$race[i],
-                                        "start" = swan.df.long$age[i],
+                                        "start" = swan.df.long$base_age[i],
                                         "end" = swan.df.long$age[i],
                                         "event" = swan.df.long$diabetes[i]))
   }
@@ -192,10 +192,20 @@ for (i in 1:nrow(swan.df.long))
 
 #remove NA diabetes subjects
 surv.df = surv.df[!is.na(surv.df$event),]
-#remove values where no time passed
-surv.df = surv.df[surv.df$start != surv.df$end,]
 
-##censor data
+#remove NA base age
+surv.df = surv.df[!is.na(surv.df$base_age),]
+
+#remove values where no time passed
+surv.df = surv.df[surv.df$base_age != surv.df$end,]
+
+#t2event
+surv.df$t2event = surv.df$end - surv.df$start
+
+#remove start and end times and reorder
+surv.df = surv.df[,c(1,5,2:4,9,8)]
+
+##determine censoring
 censored = rep(0, nrow(surv.df))
 for (i in 1:nrow(surv.df))
 {
@@ -205,42 +215,39 @@ for (i in 1:nrow(surv.df))
   }
 }
 
-surv.df.censored = cbind(surv.df, censored)
+surv.df = cbind(surv.df, censored)
 
 rm(income1.codes, income2.codes, income3.codes, income4.codes,
    i, j, id.curr, id.prev, diabetes.no.codes, diabetes.yes.codes, censored,
    insure.no.codes, insure.yes.codes)
     
-##GROUP BY AGE
-hist(surv.df$start)
-summary(surv.df$start)
+##STRATIFY BY AGE
+hist(surv.df$base_age)
+summary(surv.df$base_age)
 
-ageGroup = rep(NA, nrow(surv.df))
+age_group = rep(NA, nrow(surv.df))
 
-for (i in 1:length(ageGroup))
+for (i in 1:length(age_group))
 {
-  if (surv.df$start[i] >= 42 & surv.df$start[i] <= 45)
+  if (surv.df$base_age[i] >= 42 & surv.df$base_age[i] <= 45)
   {
-    ageGroup[i] = "42_45"
+    age_group[i] = "42_45"
   }
-  else if (surv.df$start[i] >= 46 & surv.df$start[i] <= 49)
+  else if (surv.df$base_age[i] >= 46 & surv.df$base_age[i] <= 49)
   {
-    ageGroup[i] = "46_49"
+    age_group[i] = "46_49"
   }
-  else if (surv.df$start[i] >= 50 & surv.df$start[i] <= 54)
+  else if (surv.df$base_age[i] >= 50 & surv.df$base_age[i] <= 53)
   {
-    ageGroup[i] = "50_54"
+    age_group[i] = "50_53"
   }
 }
 
-surv.df = cbind(surv.df, ageGroup)
-surv.df.censored = cbind(surv.df.censored, ageGroup)
+surv.df = cbind(surv.df, age_group)
+surv.df = surv.df[,c(1:4, 9, 5:8)]
 
-rm(i, ageGroup)
+rm(i, age_group, swan.df.long, swan.df.wide)
 
 
-#####
-#TO DO:
-#set baseline as the first visit instead of the baseline, since no diabetes data... unless?
 
 
