@@ -9,6 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+The Dataset
+---------------
+The analytical sample contains 2677 records of middle-aged women who participated in the Study of Women's Health Across the Nation. Race, household income, and insurance status were assessed during a baseline visit and are assumed to be indicative of race, household income, and insurance status throughout the study. Diabetes incidence was then assessed during ten follow-up visits (t = 0 at visit 1). 
 
 ```{r libraries and dataset, include = FALSE, fig.show = "hide", results = "hide"}
 ##SET WORKING DIRECTORY TO SOURCE FILE LOCATION
@@ -17,9 +20,11 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("survival")
 #install.pacakges("ggplot2)
 #install.packages("survminer")
+#install.packages("rms")
 library(survival)
 library(ggplot2)
 library(survminer)
+library(rms)
 
 ##LOAD DATA
 source("build_survival_dataset_updated.R")
@@ -37,6 +42,8 @@ surv.df$event = as.numeric(surv.df$event)
 Research Objective
 --------------------
 How does insurance status affect the incidence of diabetes among middle-aged American women over nine years? Does this affect remain after controlling for race and household income and age group?
+
+How do race and income affect incidence of diabetes among middle-aged American women? Does the affect of race on diabetes incidence remain after controlling for household income and age group?
 
 Note: Consider common covariates: age, BMI, etc
 
@@ -101,17 +108,25 @@ xtabs(~income + event, data = surv.df)[,2] /
 Cox Proportional Hazards Models
 --------------------------
 
+We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. The hazard ratio for diabetes incidence is 0.431 and is significant at $\alpha = 0.001$. Using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994), health insurance status satisfies the proportional hazards assumption (p = 0.28).
+
 ```{r Create surv object in surv.df , echo = FALSE}
 surv.df$surv_obj = with(surv.df, Surv(t2event, event))
 ```
 
 ```{r insurance only, echo = FALSE}
 ##MODEL WITH ONLY INSURANCE STRATIFIED BY AGE GROUP
-dbts.mod.ins= coxph(surv_obj ~ insured + strata(age_group), data = surv.df)
+dbts.mod.ins= coxph(surv_obj ~ insured + strata(age_group), 
+                    data = surv.df)
 dbts.mod.ins
 
 ##Assess PH Assumption
+#Assumption met
+cox.zph(dbts.mod.ins)
+plot(cox.zph(dbts.mod.ins), 
+     main = "Scaled Schoenfeld Residuals (~insured + strata(age_group)")
 ```
+We construct a stratified Cox model of diabetes survival depending on insurance status, race, and household income stratified by age group. After adjusting for income and race, insurance status does not significantly affect diabetes incidence. Using a Goodness-of-Fit test and plotting the Schoenfeld residuals against time, we find that insurance status, race, and income all satisfy the proportional hazards assumption (p = 0.75 for insurance, p = 0.61 for race, p = 0.12 for income). 
 
 ```{r all factors, echo = FALSE}
 ##BUILD MODEL WITH ALL FACTORS OF INTEREST
@@ -119,4 +134,33 @@ dbts.mod.all = coxph(surv_obj ~ insured + race + income + strata(age_group), dat
 dbts.mod.all
 
 ##Assess PH Assumption
+cox.zph(dbts.mod.all)
+par(mfrow = c(2,2))
+plot(cox.zph(dbts.mod.all))
 ```
+
+We finally construct a model with only the significant factors found in the previous model, household income and race, and stratified by age. Using a Chi-Squared test of model difference, we find that the model including insurance status is not significantly better than the model without insurance status. The proportional hazards assumption is met for both race and income. We find that the hazard ratios for diabetes incidence for Hispanic and Black/African Americans are 0.753 and 1.027 respectively, indicating higher incidence for diabetes compared to White Americans, after adjusting for income and age. Household income is also found to be significant, with lower income women at higher risk than their wealthiest counterparts. The risk for diabetes increases with distance from the highest income group.
+
+```{r reduced model, echo = FALSE}
+#stratified CPH with race and income (no insurance)
+dbts.mod.noinsure = coxph(surv_obj ~ race + income + strata(age_group), data = surv.df)
+dbts.mod.noinsure
+
+#LRT Chi-Sq test for models
+anova(dbts.mod.noinsure, dbts.mod.all)
+
+#assess PH assumption
+cox.zph(dbts.mod.noinsure)
+par(mfrow = c(1,2))
+plot(cox.zph(dbts.mod.noinsure))
+
+
+```
+Next Steps:
+-------------------------
+* What are some additional covariates to include? BMI, exercise, stress?
+* Should household income be modeled as a time-dependent variable (ie. get household income for each visit)?
+* Plot the adjusted survival curves
+* Plot KM curves, one for each age group
+
+

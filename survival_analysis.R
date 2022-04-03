@@ -4,9 +4,11 @@
 #install.packages("survival")
 #install.pacakges("ggplot2)
 #install.packages("survminer")
+#install.packages("rms")
 library(survival)
 library(ggplot2)
 library(survminer)
+library(rms)
 
 
 ##LOAD DATA
@@ -82,7 +84,40 @@ xtabs(~income + event, data = surv.df)[,2] /
 
 ##COX MODELS
 
+surv.df$surv_obj = with(surv.df, Surv(t2event, event))
+
+##MODEL WITH ONLY INSURANCE STRATIFIED BY AGE GROUP
+dbts.mod.ins= coxph(surv_obj ~ insured + strata(age_group), 
+                    data = surv.df)
+dbts.mod.ins
+
+##Assess PH Assumption
+#Assumption met
+cox.zph(dbts.mod.ins)
+plot(cox.zph(dbts.mod.ins), 
+     main = "Scaled Schoenfeld Residuals (~insured + strata(age_group)")
+
+##BUILD MODEL WITH ALL FACTORS OF INTEREST
+dbts.mod.all = coxph(surv_obj ~ insured + race + income + strata(age_group), data = surv.df)
+dbts.mod.all
+
+##Assess PH Assumption
+cox.zph(dbts.mod.all)
+par(mfrow = c(2,2))
+plot(cox.zph(dbts.mod.all))
 
 
 
+
+#stratified CPH with race and income (no insurance)
+dbts.mod.noinsure = coxph(surv_obj ~ race + income + strata(age_group), data = surv.df)
+dbts.mod.noinsure
+
+#LRT Chi-Sq test for models
+anova(dbts.mod.noinsure, dbts.mod.all)
+
+#assess PH assumption
+cox.zph(dbts.mod.noinsure)
+par(mfrow = c(1,2))
+plot(cox.zph(dbts.mod.noinsure))
 

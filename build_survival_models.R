@@ -1,6 +1,8 @@
 ##SET WORKING DIRECTORY TO SOURCE FILE LOCATION
 
 ##LIBRARIES
+#install.packages("survival")
+#install.packages("survminer")
 library(survival)
 library(survminer)
 
