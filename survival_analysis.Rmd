@@ -32,8 +32,15 @@ library(gmodels)
 source("build_survival_dataset_updated.R")
 
 surv.df$race = as.factor(surv.df$race)
+levels(surv.df$race) = c("Black/African American",
+                         "Chinese/Chinese American",
+                         "Japanese/Japanese American",
+                         "Non-Hispanic White/Caucausian",
+                         "Hispanic")
 
 surv.df$income = as.factor(surv.df$income)
+surv.df$income = factor(surv.df$income, 
+                        levels = c("<20","20-49","50-99","100+"))
 
 surv.df$age_group = as.factor(surv.df$age_group)
 
@@ -49,11 +56,13 @@ surv.df$event = as.numeric(surv.df$event)
 surv.df$surv_obj = with(surv.df, Surv(t2event, event))
 ```
 
-Research Objective
+Research Objectives
 --------------------
-How does insurance status affect the onset of diabetes among middle-aged American women over nine years? Does this affect remain after controlling for race and household income and age group?
+How does insurance status affect the onset of diabetes among middle-aged American women over 10 years? Does this affect remain after controlling for race and household income, BMI, and age group?
 
-How do race and income affect onset of diabetes among middle-aged American women? Does the affect of race on diabetes onset remain after controlling for household income and age group?
+How do race and income affect onset of diabetes among middle-aged American women? Does the affect of race on diabetes onset remain after controlling for household income, BMI, and age group?
+
+How does yearly household income, BMI, race, and insurance affect the onset of diabetes among the middle-aged American women? Are there any interactions between these factors?
 
 Descriptive Statistics
 --------------------------
@@ -100,7 +109,7 @@ table(surv.df$income)
 Histogram of continuous BMI. 
 
 ```{r, echo = FALSE}
-hist(surv.df$t0_bmi)
+hist(surv.df$t0_bmi, main = "Baseline BMI (Continuous)", xlab = "BMI")
 ```
 
 Distribution of BMI groups. There are 186 women in the highest BMI group.
@@ -109,11 +118,12 @@ Distribution of BMI groups. There are 186 women in the highest BMI group.
 table(surv.df$bmi_group)
 ```
 
-Overall incidence of diabetes over the course of the study (10 years). 274 participants out of 2686 developed diabetes during the course of the study.
+Overall incidence of diabetes over the course of the study (10 years). 274 participants out of 2686 developed diabetes during the course of the study, 11.36% of the analytical sample.
 
 ```{r, echo = FALSE}
 ##OVERALL EVENT INCIDENCE DURING STUDY
 table(surv.df$event)
+274/2412
 ```
 
 
@@ -212,9 +222,27 @@ xtabs(~bmi_group + event, data = surv.df)[,2] /
 ```
 
 Stratified Cox Models
---------------------------
+-------------------------
 
-We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. The hazard ratio for those with insurance is 0.375 which appears significant at $\alpha = 0.001$. To assess the validity of this output, we proceed to model diagnostics to assess the proportional hazards and no-interaction assumptions.
+First we set the reference levels for factors. The reference level for insurance status is the uninsured level. For race we use the non-hispanic whites as the reference level, for BMI group we use BMI less than 30, and for household income we use the the $50,000 - 99,0000 group as it is the median and mode for household income.
+
+```{r, echo = FALSE}
+surv.df$insured = relevel(surv.df$insured, ref = "No")
+levels(surv.df$insured)
+
+surv.df$race = relevel(surv.df$race, ref = "Non-Hispanic White/Caucausian")
+levels(surv.df$race)
+
+surv.df$bmi_group = relevel(surv.df$bmi_group, ref = "<30")
+levels(surv.df$bmi_group)
+
+surv.df$income = relevel(surv.df$income, ref = "50-99")
+levels(surv.df$income)
+```
+
+## Stratified Cox Model with Only Health Insurance Status
+
+We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. The hazard ratio for those with insurance is 0.375 which appears significant at $\alpha = 0.001$ ($p < 0.0001$). To assess the validity of this output, we proceed to model diagnostics to assess the proportional hazards and no-interaction assumptions.
 
 ```{r insurance only, echo = FALSE}
 ##STRATIFIED COX MODEL WITH INSURANCE STRATIFIED BY AGE GROUP
@@ -226,7 +254,7 @@ dbts.mod.ins
 
 ```
 
-We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). The proportional hazards assumption is met since the p-value is not significant ($p = 0.20$). Using the plot of the residuals below, we can see that the hazard ratio is nearly constant over time.
+We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). The proportional hazards assumption is met since the p-value is not significant ($p = 0.20$). Using the plot of the residuals below, we can see that the hazard ratio appears constant over time.
 
 ```{r, echo = FALSE}
 
@@ -236,17 +264,17 @@ plot(cox.zph(dbts.mod.ins),
      main = "Scaled Schoenfeld Residuals (~insured + strata(age_group)")
 ```
 
-The coefficient estimates of separate models by age strata do not appear greatly different. We confirm that there is no significant interaction between the strata and insurance status with a Chi-Squared test of model difference with 2 degrees of freedom. 
+We assess the no-interaction assumption for the age strata and insurance status. The coefficient estimates of separate models by age strata do not appear greatly different. We confirm that there is no significant interaction between the strata and insurance status with a Chi-Squared test of model difference with 2 degrees of freedom. 
 
 ```{r, echo = FALSE}
 ##NO INTERACTION ASSUMPTION
 #The coefficients do not appear very different
-coxph(surv_obj ~ insured, 
-      data = surv.df[surv.df$age_group == "42_45",])
-coxph(surv_obj ~ insured, 
-      data = surv.df[surv.df$age_group == "46_49",])
-coxph(surv_obj ~ insured, 
-      data = surv.df[surv.df$age_group == "50_53",])
+coef(coxph(surv_obj ~ insured, 
+      data = surv.df[surv.df$age_group == "42_45",]))
+coef(coxph(surv_obj ~ insured, 
+      data = surv.df[surv.df$age_group == "46_49",]))
+coef(coxph(surv_obj ~ insured, 
+      data = surv.df[surv.df$age_group == "50_53",]))
 
 #stratified interaction model w/o main effect of age group
 dbts.mod.interaction = coxph(surv_obj ~ insured*age_group - age_group + strata(age_group),
@@ -257,17 +285,18 @@ dbts.mod.interaction
 anova(dbts.mod.interaction, dbts.mod.ins)
 
 ```
+## Stratified Cox Model with Insurance Status, Race, BMI, and Household Income
 
-We construct a stratified Cox model of diabetes survival depending on insurance status, race, BMI, and household income stratified by age group. 
+We construct a stratified Cox model of diabetes survival depending on insurance status, race, BMI, and household income stratified by age group. In this model, we find that, after adjusting for race, baseline household income, baseline BMI group, and stratifying by age group, the effect of insurances status on diabetes survival is not significant ($p = 0.182$). All other factors appear significant, with all minority groups experiencing higher risk for diabetes incidence than non-Hispanic whites after adjusting for insurance, income, BMI, and age. Yearly household incomes less than $50,000 are at higher risk for diabetes incidence than those at higher income levels, and higher BMI groups are also at higher risk for diabetes incidence. We will assess the validity of this model, before further interpretation of the hazard ratios.
 
 ```{r all factors, echo = FALSE}
-##STRATIFIED COX MODEL WITH INSURANCE, RACE, AND INCOME, STRATIFIED BY AGE
+##STRATIFIED COX MODEL WITH INSURANCE, RACE, INCOME, and BMI group STRATIFIED BY AGE
 #BUILD MODEL
-dbts.mod.all = coxph(surv_obj ~ insured + race + income + strata(age_group), data = surv.df)
+dbts.mod.all = coxph(surv_obj ~ insured + race + income + bmi_group + strata(age_group), data = surv.df)
 dbts.mod.all
 ```
 
-We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). 
+We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). All p-values are greater than $\alpha = 0.05$, so the proportional hazards assumption is met for the model.
 
 ```{r, echo = FALSE}
 #PH ASSUMPTION
@@ -276,67 +305,73 @@ par(mfrow = c(2,2))
 plot(cox.zph(dbts.mod.all))
 ```
 
-Using a Chi-squared test for model differences, we evaluate the no-interaction assumption for the strata and the covariates.
+Fitting separate proportional hazards models for each strata, it appears that the estimated coefficients are similar. We fit a larger model that includes the interaction between the strata and the covariates, and, using a Chi-squared test for model differences between the larger model and the previously estimated model, we evaluate the no-interaction assumption for the strata and the covariates. With a p-value of 0.329, we find no significant interaction between the strata and the covariates. The no-interaction assumption is met.
 
 ```{r, echo = FALSE}
 #NO INTERACTION ASSUMPTION
-coxph(surv_obj ~ insured + race + income, data = surv.df[surv.df$age_group == "42_45",])
-coxph(surv_obj ~ insured + race + income, data = surv.df[surv.df$age_group == "46_49",])
-coxph(surv_obj ~ insured + race + income, data = surv.df[surv.df$age_group == "50_54",])
+coef(coxph(surv_obj ~ insured + race + income + bmi_group, 
+      data =surv.df[surv.df$age_group == "42_45",]))
+coef(coxph(surv_obj ~ insured + race + income + bmi_group, 
+      data = surv.df[surv.df$age_group == "46_49",]))
+coef(coxph(surv_obj ~ insured + race + income + bmi_group, 
+      data = surv.df[surv.df$age_group == "50_53",]))
 
-dbts.mod.all.interaction = coxph(surv_obj ~ (insured + race + income)*age_group - age_group + strata(age_group), data = surv.df)
-dbts.mod.all.interaction
+dbts.mod.all.interaction = coxph(surv_obj ~ (insured + race + income + bmi_group)*age_group - age_group + strata(age_group), data = surv.df)
 
 #chi-squared test for significance of interaction
 anova(dbts.mod.all.interaction, dbts.mod.all)
 ```
 
-We finally construct a model with only the significant factors found in the previous model, household income and race, and stratified by age. Using a Chi-Squared test of model difference, we find that the model including insurance status is not significantly better than the model without insurance status. The proportional hazards assumption is met for both race and income. A Chi-Squared test of deviances with 14 degrees of freedom finds no significant difference between the model including an interaction between age group and the covariates ($p = 0.820$), so the no interaction assumption for stratified Cox models is also satisfied.
+## Stratified Cox Model with Race, BMI, and Household Income
+
+We finally construct a model with only the significant factors found in the previous model, household income and race, and stratified by age. Using a Chi-Squared test of model difference, we find that the model including insurance status is not significantly better than the model without insurance status. A Chi-Squared test of deviances with 14 degrees of freedom finds no significant difference between the model including an interaction between age group and the covariates ($p = 0.820$), so the no interaction assumption for stratified Cox models is also satisfied.
 
 ```{r reduced model, echo = FALSE}
-##STRATIFIED COX MODEL WITH RACE AND INCOME, AND STRATIFIED BY AGE
+##STRATIFIED COX MODEL WITH RACE, BMI, AND INCOME, AND STRATIFIED BY AGE
 #BUILD MODEL
-dbts.mod.noinsure = coxph(surv_obj ~ race + income + strata(age_group), data = surv.df)
+dbts.mod.noinsure = coxph(surv_obj ~ race + income + bmi_group + strata(age_group), data = surv.df)
 dbts.mod.noinsure
 
 #LRT Chi-Sq test for models
 anova(dbts.mod.noinsure, dbts.mod.all)
 ```
 
-We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994).
+We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). The proportional hazards assumption is met for all factors since there are no significant p-values at $\alpha = 0.05$. 
 
 ```{r, echo = FALSE}
 #PH ASSUMPTION
 cox.zph(dbts.mod.noinsure)
-par(mfrow = c(1,2))
+par(mfrow = c(2,2))
 plot(cox.zph(dbts.mod.noinsure))
 ```
 
-We assess the no-interaction assumption between the strata and the covariates using a Chi-squared test of model difference.
+We assess the no-interaction assumption between the strata and the covariates using a Chi-squared test of model difference with 18 degrees of freedom. We find no significant interaction between the strata and the covariates, race, income, and BMI group.
 
 ```{r, echo = FALSE}
 #NO INTERACTION ASSUMPTION
-coxph(surv_obj ~ race + income, data = surv.df[surv.df$age_group == "42_45",])
-coxph(surv_obj ~ race + income, data = surv.df[surv.df$age_group == "46_49",])
-coxph(surv_obj ~ race + income, data = surv.df[surv.df$age_group == "50_54",])
+coef(coxph(surv_obj ~ race + income + bmi_group, data = surv.df[surv.df$age_group == "42_45",]))
+coef(coxph(surv_obj ~ race + income + bmi_group, data = surv.df[surv.df$age_group == "46_49",]))
+coef(coxph(surv_obj ~ race + income + bmi_group, data = surv.df[surv.df$age_group == "50_53",]))
 
-dbts.mod.noinsure.interaction = coxph(surv_obj ~ (race + income)*age_group - age_group + strata(age_group), data = surv.df)
-dbts.mod.noinsure.interaction
+dbts.mod.noinsure.interaction = coxph(surv_obj ~ (race + income + bmi_group)*age_group - age_group + strata(age_group), data = surv.df)
 
 #Chi-Squared test of deviance
 anova(dbts.mod.noinsure.interaction, dbts.mod.noinsure)
 
 ```
 
-We find that the hazard ratios for diabetes incidence for Hispanic and Black/African Americans are 0.753 and 1.027 respectively, indicating higher risk for diabetes onset compared to White Americans, after adjusting for income and age ($p < 0.001$ for Black/African Americans, $p < 0.001$ for Hispanic Americans). Household income is also found to be significant, with lower income women at higher risk than their wealthiest counterparts. The risk for diabetes increases with distance from the highest income group.
+We find that the hazard ratios for diabetes incidence are highest for Hispanic women, with 195% higher risk for diabetes incidence after adjusting for household income, BMI group, and stratifying by age ($p < 0.0001$). After adjusting for household income, BMI group, and stratifying by age, all racial groups are at significantly higher risk than their non-Hispanic white counterparts. The risk for diabetes is significantly higher for groups with yearly household incomes less than $50,000 after adjusting for race, BMI, and stratifying by age. Notably, those with a BMI higher than 40 are at 592.92% higher risk and those with a BMI between 30 and 40 are at 265.9% higher risk for diabetes incidence than those with a BMI less than 30 after adjusting for race, household income, and stratified by race.
 
 ```{r selected model summary, echo = FALSE}
 #MODEL SUMMARY
 dbts.mod.noinsure
 ```
 
-Kaplain-Meier Curves
+
+Kaplan-Meier Curves
 ------------------------------
+
+We construct separate unadjusted Kaplan-Meier curves for the effect of health insurance by each of the age strata. For those who entered the study at ages 42 t0 45, the risk for diabetes for those without insurance is significantly lower than for those with insurance ($p = 0.0005$).
 
 ```{r 42_45, echo = FALSE}
 km42_45 = survfit(surv_obj ~ insured, 
@@ -346,14 +381,18 @@ ggsurvplot(km42_45,
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 42-45)",
-           legend = "none",
+           title = "Diabetes Survival (42-45 Age Group)",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3)
+
+survdiff(surv_obj ~ insured, 
+                  data = surv.df[surv.df$age_group=="42_45",])
 ```
+
+For those who entered the study between ages 46 and 49, the risk for diabetes incidence is significantly higher for women who don't have insurance than for those who have insurance.
 
 ```{r 46_49, echo = FALSE}
 km46_49 = survfit(surv_obj ~ insured, 
@@ -363,30 +402,35 @@ ggsurvplot(km46_49,
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 46-49)",
-           legend = "none",
+           title = "Diabetes Survival (46-49 Age Group)",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3)
+survdiff(surv_obj ~ insured, 
+                  data = surv.df[surv.df$age_group=="46_49",])
 ```
 
+For women who entered the study between ages 49 and 53, there is no significant difference in diabetes survival based on health insurance status.
+
 ```{r 50_53, echo = FALSE}
-km50_54 = survfit(surv_obj ~ insured, 
+km50_53 = survfit(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="50_53",])
 ggsurvplot(km50_53, 
            data = surv.df[surv.df$age_group=="50_53",], 
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 50-53)",
-           legend = "none",
+           title = "Diabetes Survival (50-53 Age Group)",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3)
+
+survdiff(surv_obj ~ insured, 
+                  data = surv.df[surv.df$age_group=="50_53",])
 ```
 
 
