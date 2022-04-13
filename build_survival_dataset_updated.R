@@ -9,7 +9,7 @@ source("load_swan_data.R")
 ##GET VARIABLES OF INTEREST
 df.base = base[,c("SWANID", "AGE0", "RACE", "INCOME0", 
                   "PREPAID0", "OTHRPRI0", "MEDICAR0", "MEDICAI0", 
-                  "MILITAR0", "NOINSUR0", "OTHINSU0", "INSULIN0")]
+                  "MILITAR0", "NOINSUR0", "OTHINSU0", "INSULIN0", "BMI0")]
 df.1 = visit1[,c("SWANID",  "AGE1",  
                  "INCOME1", "DIABETE1")]
 df.2 = visit2[,c("SWANID", "AGE2", 
@@ -42,13 +42,14 @@ merge.df = merge(merge.df, df.9, by = "SWANID", all.x = "TRUE")
 merge.df = merge(merge.df, df.10, by = "SWANID", all.x = "TRUE")
 
 #reorder columns
-merge.df = merge.df[,c(1:4, 12:42, 5:11)]
+merge.df = merge.df[,c(1:4, 12, 14:43, 5:11, 13)]
 swan.df.wide = merge.df[, c(1, #id
                             3, #race
                             2,6,9,12,15,18,21,24,27,30,33, #age
                             4,7,10,13,16,19,22,25,28,31,34, #income
                             5,8,11,14,17,20,23,26,29,32,35, #diabetes
-                            36:42)] #insurance
+                            36:42, #insurance
+                            43)] #baseline bmi
 
 ######################################
 
@@ -167,6 +168,7 @@ swan.df.long = arrange(swan.df.long, SWANID)
 swan.df.long = swan.df.long[, -(3:9)] ##keep only dichotomized insurance
 rownames(swan.df.long) = c(1:nrow(swan.df.long))
 colnames(swan.df.long) = c("SWANID", "race",
+                           "base_bmi",
                            "insured", "base_income",
                            "base_age", "visit", 
                            "age","income", 
@@ -180,6 +182,7 @@ colnames(swan.df.long) = c("SWANID", "race",
 # time to event, age at event OR end of study
 # event status
 surv.df = data.frame("SWANID" = c(),
+                     "base_bmi" = c(),
                      "base_income" = c(), 
                      "base_age" = c(),
                      "insured" = c(), 
@@ -201,6 +204,7 @@ for (i in 1:nrow(swan.df.long))
   if (id.curr != id.prev) #add new row to the survival data frame
   {
     surv.df = rbind(surv.df, data.frame("SWANID" = id.curr,
+                                        "base_bmi" = swan.df.long$base_bmi[i],
                                         "base_income" = swan.df.long$base_income[i],
                                         "base_age" = swan.df.long$age[i],
                                         "insured" = swan.df.long$insured[i],
@@ -245,10 +249,11 @@ surv.df = surv.df[!is.na(surv.df$base_age),]
 #remove NA base income
 surv.df = surv.df[!is.na(surv.df$base_income),]
 
-#remove unknown insurance status
-xtabs(~insured, surv.df) #only 31 unknown insurance status
-surv.df = surv.df[!(surv.df$insured == "Unknown"), ]
+#remove NA base bmi
+surv.df = surv.df[!is.na(surv.df$base_bmi),]
 
+#remove unknown insurance status
+surv.df = surv.df[!(surv.df$insured == "Unknown"), ]
 
 #remove values where no time passed, 
 #since these individuals had diabetes at t = 0
@@ -264,7 +269,7 @@ surv.df = surv.df[surv.df$base_age != surv.df$end,]
 surv.df$t2event = surv.df$end - surv.df$start
 
 #remove start and end times and reorder
-surv.df = surv.df[,c(1,5,2:4,9,8)]
+surv.df = surv.df[,c(1,6,2:5,10,9)]
 
 ##determine censoring
 censored = rep(0, nrow(surv.df))
@@ -305,10 +310,34 @@ for (i in 1:length(age_group))
 }
 
 surv.df = cbind(surv.df, age_group)
-surv.df = surv.df[,c(1:4, 9, 5:8)]
+surv.df = surv.df[,c(1:5, 10, 6:9)]
 
 rm(i, age_group, swan.df.long, swan.df.wide)
 
-colnames(surv.df) = c("SWANID", "race", "t0_income", "t0_age", 
+colnames(surv.df) = c("SWANID", "race", "t0_bmi", "t0_income", "t0_age", 
                       "age_group", "insured", "t2event", "event", "censored")
 
+#group bmi
+hist(surv.df$t0_bmi)
+bmi_group = rep(NA, nrow(surv.df))
+
+for (i in 1:length(bmi_group))
+{
+  if (surv.df$t0_bmi[i] < 30)
+  {
+    bmi_group[i] = "<30"
+  }
+  else if (surv.df$t0_bmi[i] >= 30 & surv.df$t0_bmi[i] < 40)
+  {
+    bmi_group[i] = "30_40"
+  }
+  else if (surv.df$t0_bmi[i] >= 40)
+  {
+    bmi_group[i] = "40+"
+  }
+}
+
+surv.df = cbind(surv.df, bmi_group)
+surv.df = surv.df[,c(1:3, 11, 4:10)]
+
+rm(bmi_group, i)
