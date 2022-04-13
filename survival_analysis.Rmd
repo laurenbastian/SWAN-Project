@@ -9,8 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Study of Women's Health Across the Nation
----------------
+# Study of Women's Health Across the Nation
+
 The data come from the Study of Women's Health Across the Nation (SWAN), a longitudinal population-based study of 3302 middle-aged women with data collected between 1998 and 2008, with data made public for research purposes through [ICPSR](https://www.icpsr.umich.edu/web/ICPSR/series/00253). The analytical sample contains 2686 records of middle-aged women who participated in the study and had complete observations for race, baseline BMI, baseline household income, and health insurance. Race, household income, and insurance status were assessed during a baseline visit and are assumed to be indicative of race, household income, and insurance status throughout the study. Diabetes status was assessed during baseline as whether or not the individual was currently treating diabetes using insulin, and explicitly assessed during ten follow-up visits ($t$ is the years since baseline visit). 
 
 ```{r libraries and dataset, include = FALSE, fig.show = "hide", results = "hide"}
@@ -56,16 +56,15 @@ surv.df$event = as.numeric(surv.df$event)
 surv.df$surv_obj = with(surv.df, Surv(t2event, event))
 ```
 
-Research Objectives
---------------------
+# Research Objectives
+
 How does insurance status affect the onset of diabetes among middle-aged American women over 10 years? Does this affect remain after controlling for race and household income, BMI, and age group?
 
 How do race and income affect onset of diabetes among middle-aged American women? Does the affect of race on diabetes onset remain after controlling for household income, BMI, and age group?
 
 How does yearly household income, BMI, race, and insurance affect the onset of diabetes among the middle-aged American women? Are there any interactions between these factors?
 
-Descriptive Statistics
---------------------------
+# Descriptive Statistics
 
 The mean age at $t = 0$ is 45.899.
 ```{r descriptives, echo = FALSE}
@@ -127,8 +126,7 @@ table(surv.df$event)
 ```
 
 
-Exploratory Analysis
--------------------
+# Exploratory Analysis
 
 Cross tabulation for race and income. 
 
@@ -221,8 +219,7 @@ xtabs(~bmi_group + event, data = surv.df)[,2] /
   xtabs(~bmi_group + event, data = surv.df)[,1]
 ```
 
-Stratified Cox Models
--------------------------
+# Stratified Cox Models
 
 First we set the reference levels for factors. The reference level for insurance status is the uninsured level. For race we use the non-hispanic whites as the reference level, for BMI group we use BMI less than 30, and for household income we use the the $50,000 - 99,0000 group as it is the median and mode for household income.
 
@@ -367,9 +364,16 @@ We find that the hazard ratios for diabetes incidence are highest for Hispanic w
 dbts.mod.noinsure
 ```
 
+## Stratified Cox Model with Covariate Interactions
 
-Kaplan-Meier Curves
-------------------------------
+Race and household income may be confounding in their effects on health status, since certain race/ethnic groups are over-represented in lower income groups. We assess whether there is a significant interaction between these two covariates after adjusting for BMI and stratifying by age group. The model shows no significant interactions between any race or income group. Low significance of interaction groups may be due to very few replications of factor combinations, which results in a convergence warning in the model fitting.
+
+```{r, echo = FALSE}
+coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df)
+```
+
+
+# Kaplan-Meier Curves
 
 We construct separate unadjusted Kaplan-Meier curves for the effect of health insurance by each of the age strata. For those who entered the study at ages 42 t0 45, the risk for diabetes for those without insurance is significantly lower than for those with insurance ($p = 0.0005$).
 
