@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Study of Women's Health Across the Nation
 ---------------
-The data come from the Study of Women's Health Across the Nation (SWAN), a longitudinal population-based study of 3302 middle-aged women with data collected between 1998 and 2008, with data made public for research purposes through [ICPSR](https://www.icpsr.umich.edu/web/ICPSR/series/00253). The analytical sample contains 2608 records of middle-aged women who participated in the study and had complete observations for race, household income, and health insurance. Race, household income, and insurance status were assessed during a baseline visit and are assumed to be indicative of race, household income, and insurance status throughout the study. Diabetes incidence was then assessed during ten follow-up visits (t = 0 at visit 1, t = 9 at visit 10). 
+The data come from the Study of Women's Health Across the Nation (SWAN), a longitudinal population-based study of 3302 middle-aged women with data collected between 1998 and 2008, with data made public for research purposes through [ICPSR](https://www.icpsr.umich.edu/web/ICPSR/series/00253). The analytical sample contains 2717 records of middle-aged women who participated in the study and had complete observations for race, household income, and health insurance. Race, household income, and insurance status were assessed during a baseline visit and are assumed to be indicative of race, household income, and insurance status throughout the study. Diabetes status was assessed during baseline as whether or not the individual was currently treating diabetes using insulin, and explicitly assessed during ten follow-up visits ($t$ is the years since baseline visit). 
 
 ```{r libraries and dataset, include = FALSE, fig.show = "hide", results = "hide"}
 ##SET WORKING DIRECTORY TO SOURCE FILE LOCATION
@@ -39,6 +39,10 @@ surv.df$event = as.numeric(surv.df$event)
 
 surv.comp = surv.df[complete.cases(surv.df),]
 
+```
+
+```{r Create surv object in surv.comp , echo = FALSE}
+surv.comp$surv_obj = with(surv.comp, Surv(t2event, event))
 ```
 
 Research Objective
@@ -131,9 +135,6 @@ Stratified Cox Models
 
 We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. The hazard ratio for diabetes incidence is 0.431 and is significant at $\alpha = 0.001$. Using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994), health insurance status satisfies the proportional hazards assumption ($p = 0.28$). A Chi-Squared test of deviances with 2 degrees of freedom finds no significant difference between the model including an interaction between age group and insurance status ($p = 0.983$), so the no interaction assumption for stratified Cox models is also satisfied.
 
-```{r Create surv object in surv.comp , echo = FALSE}
-surv.comp$surv_obj = with(surv.comp, Surv(t2event, event))
-```
 
 ```{r insurance only, echo = FALSE}
 ##STRATIFIED COX MODEL WITH INSURANCE STRATIFIED BY AGE GROUP
@@ -165,6 +166,13 @@ dbts.mod.interaction
 #interaction not significant
 anova(dbts.mod.interaction, dbts.mod.ins)
 
+```
+
+```{r, echo = FALSE}
+ggadjustedcurves(dbts.mod.ins, 
+                 variable = c("age_group"), 
+                 data = surv.comp,
+                 ylim = c(0.75, 1.0))
 ```
 
 We construct a stratified Cox model of diabetes survival depending on insurance status, race, and household income stratified by age group. After adjusting for income and race, insurance status does not significantly affect diabetes incidence. Using a Goodness-of-Fit test and plotting the Schoenfeld residuals against time, we find that insurance status, race, and income all satisfy the proportional hazards assumption ($p = 0.75$ for insurance, $p = 0.61$ for race, $p = 0.12$ for income). A Chi-Squared test of deviances with 16 degrees of freedom finds no significant difference between the model including an interaction between age group and the covariates ($p = 0.897$), so the no interaction assumption for stratified Cox models is also satisfied.
@@ -229,12 +237,65 @@ We find that the hazard ratios for diabetes incidence for Hispanic and Black/Afr
 dbts.mod.noinsure
 ```
 
+Kaplain-Meier Curves
+------------------------------
+
+```{r 42_45, echo = FALSE}
+km42_45 = survfit(surv_obj ~ insured, 
+                  data = surv.comp[surv.comp$age_group=="42_45",])
+ggsurvplot(km42_45, 
+           data = surv.comp[surv.comp$age_group=="42_45",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 42-45)",
+           legend = "none",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3)
+```
+
+```{r 46_49, echo = FALSE}
+km46_49 = survfit(surv_obj ~ insured, 
+                  data = surv.comp[surv.comp$age_group=="46_49",])
+ggsurvplot(km46_49, 
+           data = surv.comp[surv.comp$age_group=="46_49",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 46-49)",
+           legend = "none",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3)
+```
+
+```{r 50_54, echo = FALSE}
+km50_54 = survfit(surv_obj ~ insured, 
+                  data = surv.comp[surv.comp$age_group=="50_54",])
+ggsurvplot(km50_54, 
+           data = surv.comp[surv.comp$age_group=="50_54",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 50-54)",
+           legend = "none",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3)
+```
+
 Next Steps:
 -------------------------
 
 * What are some additional covariates to include? BMI, exercise, stress?
-* Should household income be modeled as a time-dependent variable (ie. get household income for each visit)?
-* Plot the adjusted survival curves
-* Plot KM curves, one for each age group
+* Plot the adjusted survival curves?
+
 
 

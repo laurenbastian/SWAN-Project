@@ -7,28 +7,28 @@ library(dplyr)
 source("load_swan_data.R")
 
 ##GET VARIABLES OF INTEREST
-df.base = base[,c("SWANID", "AGE0", "RACE", "STATUS0", "INCOME0", 
+df.base = base[,c("SWANID", "AGE0", "RACE", "INCOME0", 
                   "PREPAID0", "OTHRPRI0", "MEDICAR0", "MEDICAI0", 
-                  "MILITAR0", "NOINSUR0", "OTHINSU0")]
-df.1 = visit1[,c("SWANID",  "AGE1", "STATUS1", 
+                  "MILITAR0", "NOINSUR0", "OTHINSU0", "INSULIN0")]
+df.1 = visit1[,c("SWANID",  "AGE1",  
                  "INCOME1", "DIABETE1")]
-df.2 = visit2[,c("SWANID", "AGE2", "STATUS2", 
+df.2 = visit2[,c("SWANID", "AGE2", 
                  "INCOME2", "DIABETE2")]
-df.3 = visit3[,c("SWANID", "AGE3", "STATUS3", 
+df.3 = visit3[,c("SWANID", "AGE3", 
                  "INCOME3", "DIABETE3")]
-df.4 = visit4[,c("SWANID", "AGE4", "STATUS4", 
+df.4 = visit4[,c("SWANID", "AGE4",  
                  "INCOME4", "DIABETE4")]
-df.5 = visit5[,c("SWANID", "AGE5", "STATUS5", 
+df.5 = visit5[,c("SWANID", "AGE5",  
                 "INCOME5", "DIABETE5")]
-df.6 = visit6[,c("SWANID", "AGE6", "STATUS6", 
+df.6 = visit6[,c("SWANID", "AGE6",  
                  "INCOME6", "DIABETE6")]
-df.7 = visit7[,c("SWANID", "AGE7", "STATUS7", 
+df.7 = visit7[,c("SWANID", "AGE7",  
                  "INCOME7", "DIABETE7")]
-df.8 = visit8[,c("SWANID","AGE8","STATUS8", 
+df.8 = visit8[,c("SWANID","AGE8", 
                  "INCOME8", "DIABETE8")]
-df.9 = visit9[,c("SWANID", "AGE9", "STATUS9", 
+df.9 = visit9[,c("SWANID", "AGE9",  
                  "INCOME9", "DIABETE9")]
-df.10 = visit10[,c("SWANID", "AGE10", "STATUS10", 
+df.10 = visit10[,c("SWANID", "AGE10", 
                  "INCOME10", "DIABETE10")]
 merge.df = merge(df.base, df.1, by = "SWANID")
 merge.df = merge(merge.df, df.2, by = "SWANID", all.x = "TRUE")
@@ -42,14 +42,13 @@ merge.df = merge(merge.df, df.9, by = "SWANID", all.x = "TRUE")
 merge.df = merge(merge.df, df.10, by = "SWANID", all.x = "TRUE")
 
 #reorder columns
-merge.df = merge.df[,c (1:5, 13:52, 6:12)]
-swan.df.wide = merge.df[, c(1,
-                            3,
-                            2,6,10,14,18,22,26,30,34,38,42,
-                            4,7,11,15,19,23,27,31,35,39,43,
-                            5,8,12,16,20,24,28,32,36,40,44,
-                            9,13,17,21,25,29,33,37,41,45,
-                            46:52)]
+merge.df = merge.df[,c(1:4, 12:42, 5:11)]
+swan.df.wide = merge.df[, c(1, #id
+                            3, #race
+                            2,6,9,12,15,18,21,24,27,30,33, #age
+                            4,7,10,13,16,19,22,25,28,31,34, #income
+                            5,8,11,14,17,20,23,26,29,32,35, #diabetes
+                            36:42)] #insurance
 
 ######################################
 
@@ -69,20 +68,20 @@ income3.codes = c("(3) $50,000 to $99,999", "(3) 3: $50,000 to $99,999")
 income4.codes = c("(4) $100,000 or More", "(4) 4: $100,000 or More", 
                   "(4) $100,000 or more", "(4) 4: $100,000 or more")
 
-for (i in 25:35)
+for (i in 14:24)
 {
   swan.df.wide[,i] = as.character(swan.df.wide[,i])
   swan.df.wide[,i][swan.df.wide[,i] %in% income1.codes] = "<20"
   swan.df.wide[,i][swan.df.wide[,i] %in% income2.codes] = "20-49"
   swan.df.wide[,i][swan.df.wide[,i] %in% income3.codes] = "50-99"
-  swan.df.wide[,i][swan.df.wide[,i] %in% income4.codes] = ">100"
+  swan.df.wide[,i][swan.df.wide[,i] %in% income4.codes] = "100+"
 }
 
 #Clean diabetes data
 diabetes.no.codes = c("(1) No", "(1) 1: No")
 diabetes.yes.codes = c("(2) Yes", "(2) 2: Yes")
 
-for (i in 36:45)
+for (i in 25:35)
 {
   swan.df.wide[,i] = as.character(swan.df.wide[,i])
   swan.df.wide[,i][swan.df.wide[,i] %in% diabetes.no.codes] = "0"
@@ -94,39 +93,84 @@ for (i in 36:45)
 insure.no.codes = c("(1) No")
 insure.yes.codes = c("(2) Yes")
 
-for (i in 46:52)
+for (i in 36:42)
 {
   swan.df.wide[,i] = as.character(swan.df.wide[,i])
   swan.df.wide[,i][swan.df.wide[,i] %in% insure.no.codes] = "0"
   swan.df.wide[,i][swan.df.wide[,i] %in% insure.yes.codes] = "1"
 }
 
+#create character vector to hold insurance status
+insured = character(nrow(swan.df.wide))
 
-#dichotomize
-swan.df.wide$insured = ifelse(swan.df.wide$NOINSUR0 == "1", "No", "Yes")
+#find unknown statuses
+#unknown if there was no answer for all values but NA for no insurance
+#NA for all values
+#yes for no insurance and another insurance,  
+unique(swan.df.wide[,36:42])
 
+for (i in 1:nrow(swan.df.wide))
+{
+  #if no insurance is yes,  
+  #check whether any other types of insurance are marked yes
+  if (swan.df.wide[i,]$NOINSUR0 == "1" &&
+      !(is.na(swan.df.wide[i,]$NOINSUR0)))
+  {
+    for (j in c(36:40,42))
+    {
+      insure = "No"
+      if (swan.df.wide[i,j] == "1" && !(is.na(swan.df.wide[i,j])))
+      {
+        insure = "Unknown"
+        break
+      }
+    }
+    insured[i] = insure
+  }
+  
+  #else if no insurance is marked no or NA, 
+  #check whether any other types of insurance are marked yes
+  else if(swan.df.wide[i,]$NOINSUR0 == "0" || 
+          is.na(swan.df.wide[i,]$NOINSUR0))
+  {
+    for (j in c(36:40,42))
+    {
+      insure = "Unknown"
+      if (swan.df.wide[i,j] == "1" && !(is.na(swan.df.wide[i,j])))
+      {
+        insure = "Yes"
+        break
+      }
+    }
+    insured[i] = insure
+  }
+}
 
-#Remove menopausal status
-swan.df.wide = swan.df.wide[,-c(14:24)]
+swan.df.wide$insured = insured
+
+##ADD COVARIATES FOR SURVIVAL DATASET
+swan.df.wide$base_income = swan.df.wide$INCOME0
+swan.df.wide$base_age = swan.df.wide$AGE0
 
 ##RESHAPE TO LONG
-#diabetes not recorded at baseline so start of study will be considered the first visit,
-#except for baseline study entry data
 
 swan.df.long = reshape(data = swan.df.wide, 
                                 idvar = c("SWANID"), 
-                                varying = list(c(4:13), c(15:24), c(25:34)), 
+                                varying = list(c(3:13), c(14:24), c(25:35)), 
                                 v.names = c("age", "income", "diabetes"), 
                                 timevar = "visit",
-                                times = c(1,2,3,4,5,6,7,8,9,10), 
+                                times = c(0,1,2,3,4,5,6,7,8,9,10), 
                                 direction = "long")
 
 #reorder long
 swan.df.long = arrange(swan.df.long, SWANID)
-swan.df.long = swan.df.long[, -(5:11)] ##keep only dichotomized insurance
+swan.df.long = swan.df.long[, -(3:9)] ##keep only dichotomized insurance
 rownames(swan.df.long) = c(1:nrow(swan.df.long))
-colnames(swan.df.long) = c("SWANID", "race", "base_age", 
-                          "base_income", "insured", "visit", "age","income", "diabetes")
+colnames(swan.df.long) = c("SWANID", "race",
+                           "insured", "base_income",
+                           "base_age", "visit", 
+                           "age","income", 
+                           "diabetes")
 
 ##FIND TIME TO EVENT
 ##need:
@@ -198,10 +242,22 @@ surv.df = surv.df[!is.na(surv.df$event),]
 #remove NA base age
 surv.df = surv.df[!is.na(surv.df$base_age),]
 
-#remove NA insurance status
-surv.df = surv.df[!is.na(surv.df$insured),]
+#remove NA base income
+surv.df = surv.df[!is.na(surv.df$base_income),]
 
-#remove values where no time passed, since these individuals had diabetes at t = 0
+#remove unknown insurance status
+xtabs(~insured, surv.df) #only 31 unknown insurance status
+surv.df = surv.df[!(surv.df$insured == "Unknown"), ]
+
+
+#remove values where no time passed, 
+#since these individuals had diabetes at t = 0
+
+nrow(surv.df[surv.df$base_age == surv.df$end,]) 
+ftable(xtabs(~insured + race + base_income, 
+             surv.df[surv.df$base_age == surv.df$end,]))
+#50 people were being treated for diabetes at baseline in the analytic sample
+
 surv.df = surv.df[surv.df$base_age != surv.df$end,]
 
 #t2event
@@ -224,7 +280,7 @@ surv.df = cbind(surv.df, censored)
 
 rm(income1.codes, income2.codes, income3.codes, income4.codes,
    i, j, id.curr, id.prev, diabetes.no.codes, diabetes.yes.codes, censored,
-   insure.no.codes, insure.yes.codes)
+   insure.no.codes, insure.yes.codes, insure, insured)
     
 ##STRATIFY BY AGE
 hist(surv.df$base_age)
@@ -234,17 +290,17 @@ age_group = rep(NA, nrow(surv.df))
 
 for (i in 1:length(age_group))
 {
-  if (surv.df$base_age[i] >= 42 & surv.df$base_age[i] <= 45)
+  if (surv.df$base_age[i] >= 42 & surv.df$base_age[i] <= 44)
   {
-    age_group[i] = "42_45"
+    age_group[i] = "42_44"
   }
-  else if (surv.df$base_age[i] >= 46 & surv.df$base_age[i] <= 49)
+  else if (surv.df$base_age[i] >= 45 & surv.df$base_age[i] <= 48)
   {
-    age_group[i] = "46_49"
+    age_group[i] = "45_48"
   }
-  else if (surv.df$base_age[i] >= 50 & surv.df$base_age[i] <= 54)
+  else if (surv.df$base_age[i] >= 49 & surv.df$base_age[i] <= 53)
   {
-    age_group[i] = "50_54"
+    age_group[i] = "49_53"
   }
 }
 
@@ -253,18 +309,6 @@ surv.df = surv.df[,c(1:4, 9, 5:8)]
 
 rm(i, age_group, swan.df.long, swan.df.wide)
 
-colnames(surv.df) = c("SWANID", "race", "income", "t0_age", 
+colnames(surv.df) = c("SWANID", "race", "t0_income", "t0_age", 
                       "age_group", "insured", "t2event", "event", "censored")
-
-##surv.df
-#time 0 is considered the first visit of the study
-#race was assessed during a baseline admission study
-#income was assessed during a baseline admission study
-#t0_age was the the age assessed at visit 1, which is considered time 0
-#insurance status was assessed during a baseline admission study
-#t2event was calculated from visits 1 to 10 based on the first time the
-#     individual reported having been diagnosed or treated for diabetes
-#event is the incidence of diabetes
-#censorship was calculated based on whether the event occurred by the end of the study
-
 
