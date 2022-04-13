@@ -122,7 +122,7 @@ Exploratory Analysis
 
 Cross tabulation for race and income. 
 
-```{r exploratory, echo = FALSE}
+```{r, echo = FALSE}
 ##FACTOR CROSS TABS
 ftable(xtabs(~race + income, data = surv.df))
 
@@ -134,7 +134,7 @@ CrossTable(surv.df$race, surv.df$income,
 
 Cross tabulation for race and insurance status.
 
-```{r exploratory, echo = FALSE}
+```{r, echo = FALSE}
 ##FACTOR CROSS TABS
 ftable(xtabs(~race + insured, data = surv.df))
 
@@ -258,20 +258,27 @@ anova(dbts.mod.interaction, dbts.mod.ins)
 
 ```
 
-We construct a stratified Cox model of diabetes survival depending on insurance status, race, and household income stratified by age group. After adjusting for income and race, insurance status does not significantly affect diabetes incidence. Using a Goodness-of-Fit test and plotting the Schoenfeld residuals against time, we find that insurance status, race, and income all satisfy the proportional hazards assumption ($p = 0.75$ for insurance, $p = 0.61$ for race, $p = 0.12$ for income). A Chi-Squared test of deviances with 16 degrees of freedom finds no significant difference between the model including an interaction between age group and the covariates ($p = 0.897$), so the no interaction assumption for stratified Cox models is also satisfied.
+We construct a stratified Cox model of diabetes survival depending on insurance status, race, BMI, and household income stratified by age group. 
 
 ```{r all factors, echo = FALSE}
 ##STRATIFIED COX MODEL WITH INSURANCE, RACE, AND INCOME, STRATIFIED BY AGE
-
 #BUILD MODEL
 dbts.mod.all = coxph(surv_obj ~ insured + race + income + strata(age_group), data = surv.df)
 dbts.mod.all
+```
 
+We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). 
+
+```{r, echo = FALSE}
 #PH ASSUMPTION
 cox.zph(dbts.mod.all)
 par(mfrow = c(2,2))
 plot(cox.zph(dbts.mod.all))
+```
 
+Using a Chi-squared test for model differences, we evaluate the no-interaction assumption for the strata and the covariates.
+
+```{r, echo = FALSE}
 #NO INTERACTION ASSUMPTION
 coxph(surv_obj ~ insured + race + income, data = surv.df[surv.df$age_group == "42_45",])
 coxph(surv_obj ~ insured + race + income, data = surv.df[surv.df$age_group == "46_49",])
@@ -294,12 +301,20 @@ dbts.mod.noinsure
 
 #LRT Chi-Sq test for models
 anova(dbts.mod.noinsure, dbts.mod.all)
+```
 
+We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994).
+
+```{r, echo = FALSE}
 #PH ASSUMPTION
 cox.zph(dbts.mod.noinsure)
 par(mfrow = c(1,2))
 plot(cox.zph(dbts.mod.noinsure))
+```
 
+We assess the no-interaction assumption between the strata and the covariates using a Chi-squared test of model difference.
+
+```{r, echo = FALSE}
 #NO INTERACTION ASSUMPTION
 coxph(surv_obj ~ race + income, data = surv.df[surv.df$age_group == "42_45",])
 coxph(surv_obj ~ race + income, data = surv.df[surv.df$age_group == "46_49",])
@@ -357,15 +372,15 @@ ggsurvplot(km46_49,
            fontsize = 3)
 ```
 
-```{r 50_54, echo = FALSE}
+```{r 50_53, echo = FALSE}
 km50_54 = survfit(surv_obj ~ insured, 
-                  data = surv.df[surv.df$age_group=="50_54",])
-ggsurvplot(km50_54, 
-           data = surv.df[surv.df$age_group=="50_54",], 
+                  data = surv.df[surv.df$age_group=="50_53",])
+ggsurvplot(km50_53, 
+           data = surv.df[surv.df$age_group=="50_53",], 
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 50-54)",
+           title = "Diabetes Survival versus Time Since Study Entry (Age at t = 0, 50-53)",
            legend = "none",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
@@ -374,11 +389,6 @@ ggsurvplot(km50_54,
            fontsize = 3)
 ```
 
-Next Steps:
--------------------------
-
-* What are some additional covariates to include? BMI, exercise, stress?
-* Plot the adjusted survival curves?
 
 
 
