@@ -295,17 +295,17 @@ age_group = rep(NA, nrow(surv.df))
 
 for (i in 1:length(age_group))
 {
-  if (surv.df$base_age[i] >= 42 & surv.df$base_age[i] <= 44)
+  if (surv.df$base_age[i] >= 42 & surv.df$base_age[i] <= 45)
   {
-    age_group[i] = "42_44"
+    age_group[i] = "42_45"
   }
-  else if (surv.df$base_age[i] >= 45 & surv.df$base_age[i] <= 48)
+  else if (surv.df$base_age[i] >= 46 & surv.df$base_age[i] <= 49)
   {
-    age_group[i] = "45_48"
+    age_group[i] = "46_49"
   }
-  else if (surv.df$base_age[i] >= 49 & surv.df$base_age[i] <= 53)
+  else if (surv.df$base_age[i] >= 50 & surv.df$base_age[i] <= 53)
   {
-    age_group[i] = "49_53"
+    age_group[i] = "50_53"
   }
 }
 
@@ -314,7 +314,7 @@ surv.df = surv.df[,c(1:5, 10, 6:9)]
 
 rm(i, age_group, swan.df.long, swan.df.wide)
 
-colnames(surv.df) = c("SWANID", "race", "t0_bmi", "t0_income", "t0_age", 
+colnames(surv.df) = c("SWANID", "race", "t0_bmi", "income", "t0_age", 
                       "age_group", "insured", "t2event", "event", "censored")
 
 #group bmi
