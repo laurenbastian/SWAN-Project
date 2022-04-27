@@ -69,16 +69,16 @@ How does yearly household income, BMI, race, and insurance affect the onset of d
 The mean age at $t = 0$ is 45.899.
 ```{r descriptives, echo = FALSE}
 ##MEAN AGE AT t = 0
-mean(surv.df$t0_age) 
+mean(surv.df$t0_age)
 ```
-Distribution of the age group upon study entry. This will be our age strata.
+Count distribution of the age group upon study entry. This will be our age strata.
 
 ```{r, echo = FALSE}
 ##AGE GROUP DISTRIBUTION
 table(surv.df$age_group)
 ```
 
-Distribution of insurance status at baseline. There are 171 uninsured and 2515 insured women in the study.
+Count distribution of insurance status at baseline. There are 171 uninsured and 2515 insured women in the study.
 
 ```{r, echo = FALSE}
 ##INSURANCE STATUS
@@ -91,7 +91,7 @@ table(surv.df$insured)
 ```{r, echo = FALSE}
 nrow(surv.df[surv.df$insured == "No",]) / nrow(surv.df) 
 ```
-Race distribution of the analytical sample ($n = 2686$)
+Race counts of the analytical sample ($n = 2686$)
 
 ```{r, echo = FALSE}
 ##RACE
@@ -117,7 +117,7 @@ Distribution of BMI groups. There are 186 women in the highest BMI group.
 table(surv.df$bmi_group)
 ```
 
-Overall incidence of diabetes over the course of the study (10 years). 274 participants out of 2686 developed diabetes during the course of the study, 11.36% of the analytical sample.
+Incident diabetes counts over the course of the study. 274 participants out of 2686 developed diabetes during the course of the study, 11.36% of the analytical sample.
 
 ```{r, echo = FALSE}
 ##OVERALL EVENT INCIDENCE DURING STUDY
@@ -163,14 +163,14 @@ CrossTable(surv.df$race, surv.df$bmi_group,
            digits = 2)
 ```
 
-Counts of diabetes incidence by race.
+Incident diabetes by race.
 
 ```{r, echo = FALSE}
 ##EVENT INCIDENCE BY RACE
 xtabs(~race + event, data = surv.df)
 ```
 
-Proportion of incidence by race. The proportion of diabetes incidence within each race group appears higher for black and hispanic participants than for other groups.
+Proportion of incident diabetes by race. Incident diabetes appears higher for black and Hispanic participants than for other groups.
 
 ```{r, echo = FALSE}
 xtabs(~race + event, data = surv.df)[,2] / 
@@ -178,41 +178,41 @@ xtabs(~race + event, data = surv.df)[,2] /
 ```
 
 
-Counts of diabetes incidence by insurance status. 
+Incident diabetes by insurance status. 
 
 ```{r, echo = FALSE}
 ##EVENT INCIDENCE BY INSURANCE STATUS
 xtabs(~insured + event, data = surv.df)
 ```
 
-Proportion of diabetes incidence for those without and with insurance. Proportion of diabetes incidence by health insurance status by the end of the study appears higher for those without health insurance at baseline.
+Proportion of incident diabetes for those without and with insurance. Proportion of incident diabetes by health insurance status by the end of the study appears higher for those without health insurance at baseline.
 
 ```{r, echo = FALSE}
 xtabs(~insured + event, data = surv.df)[,2] / 
   xtabs(~insured + event, data = surv.df)[,1]
 ```
 
-Counts for diabetes incidence by household income at baseline.
+Incident diabetes by household income at baseline.
 
 ```{r, echo = FALSE}
 ##EVENT INCIDENCE BY HOUSEHOLD INCOME
 xtabs(~income + event, data = surv.df)
 ```
 
-Proportion of diabetes incidence by household income at baseline. The proportion of diabetes incidence within each household income group by end of study appears higher for lower income groups.
+Proportion of incident diabetes by household income at baseline. Incident diabetes appears higher for lower income groups.
 
 ```{r, echo = FALSE}
 xtabs(~income + event, data = surv.df)[,2] / 
   xtabs(~income + event, data = surv.df)[,1]
 ```
 
-Counts of diabetes incidence by baseline BMI group status.
+Incident diabetes by baseline BMI group status.
 
 ```{r, echo =  FALSE}
 xtabs(~bmi_group + event, data = surv.df)
 ```
 
-Proportion of diabetes incidence by baseline BMI group. 52.46% of women with a baseline BMI 40 or above developed diabetes over the course of the study. 21.90% of women with a BMI greater than 30 and strictly less than 40 developed diabetes over the course of the study. Just 5.38% of women with a baseline BMI strictly less than 30 developed diabetes during the course of the study. 
+Proportion of incident diabetes by baseline BMI group. 52.46% of women with a baseline BMI 40 or above developed diabetes over the course of the study. 21.90% of women with a BMI greater than 30 and strictly less than 40 developed diabetes over the course of the study. Just 5.38% of women with a baseline BMI strictly less than 30 developed diabetes during the course of the study. 
 
 ```{r, echo = FALSE}
 xtabs(~bmi_group + event, data = surv.df)[,2] / 
@@ -239,7 +239,7 @@ levels(surv.df$income)
 
 ## Stratified Cox Model with Only Health Insurance Status
 
-We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. The hazard ratio for those with insurance is 0.375 which appears significant at $\alpha = 0.001$ ($p < 0.0001$). To assess the validity of this output, we proceed to model diagnostics to assess the proportional hazards and no-interaction assumptions.
+We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. To assess the validity of this output, we proceed to model diagnostics to assess the proportional hazards and no-interaction assumptions.
 
 ```{r insurance only, echo = FALSE}
 ##STRATIFIED COX MODEL WITH INSURANCE STRATIFIED BY AGE GROUP
@@ -282,6 +282,8 @@ dbts.mod.interaction
 anova(dbts.mod.interaction, dbts.mod.ins)
 
 ```
+With all model assumptions met, we interpret the model. The hazard ratio for those with insurance compared to those without insurance is 0.375 which appears significant at $\alpha = 0.001$ ($p < 0.0001$), suggesting that risk for diabetes is 62.5% lower for insured than for uninsured American women.
+
 ## Stratified Cox Model with Insurance Status, Race, BMI, and Household Income
 
 We construct a stratified Cox model of diabetes survival depending on insurance status, race, BMI, and household income stratified by age group. In this model, we find that, after adjusting for race, baseline household income, baseline BMI group, and stratifying by age group, the effect of insurances status on diabetes survival is not significant ($p = 0.182$). All other factors appear significant, with all minority groups experiencing higher risk for diabetes incidence than non-Hispanic whites after adjusting for insurance, income, BMI, and age. Yearly household incomes less than $50,000 are at higher risk for diabetes incidence than those at higher income levels, and higher BMI groups are also at higher risk for diabetes incidence. We will assess the validity of this model, before further interpretation of the hazard ratios.
@@ -372,6 +374,25 @@ Race and household income may be confounding in their effects on health status, 
 coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df)
 ```
 
+# Forward Feature Selection for Stratified Cox Proportional Hazards Models
+https://mathweb.ucsd.edu/~rxu/math284/model_sel.pdf
+
+We begin by constructing univariate stratified cox models for each predictor and identify significant factors
+
+```{r, echo = FALSE}
+anova(dbts.mod.ins, coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df))
+
+anova(dbts.mod.ins, coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df))
+
+anova(dbts.mod.ins, coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df))
+```
+
+```{r, echo = FALSE}
+anova(coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df), coxph(surv_obj ~ insured + bmi_group + race + strata(age_group), data = surv.df))
+      
+anova(coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df), coxph(surv_obj ~ insured + bmi_group + income + strata(age_group), data = surv.df))
+```
+
 
 # Kaplan-Meier Curves
 
@@ -385,7 +406,7 @@ ggsurvplot(km42_45,
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival (42-45 Age Group)",
+           title = "Survival Function for Time to Diabetes (42-45 Age Group)",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
            risk.table.height = .5,
@@ -406,7 +427,7 @@ ggsurvplot(km46_49,
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival (46-49 Age Group)",
+           title = "Survival Function for Time to Diabetes (46-49 Age Group)",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
            risk.table.height = .5,
@@ -416,7 +437,7 @@ survdiff(surv_obj ~ insured,
                   data = surv.df[surv.df$age_group=="46_49",])
 ```
 
-For women who entered the study between ages 49 and 53, there is no significant difference in diabetes survival based on health insurance status.
+For women who entered the study between ages 50 and 53, there is no significant difference in diabetes survival based on health insurance status.
 
 ```{r 50_53, echo = FALSE}
 km50_53 = survfit(surv_obj ~ insured, 
@@ -426,7 +447,7 @@ ggsurvplot(km50_53,
            conf.int=FALSE, 
            xlab = "Time (t)", 
            ylab = "Survival Probability", 
-           title = "Diabetes Survival (50-53 Age Group)",
+           title = "Survival Function for Time to Diabetes (50-53 Age Group)",
            ylim = c(0.6, 1.0),
            risk.table = TRUE,
            risk.table.height = .5,
