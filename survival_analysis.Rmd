@@ -377,14 +377,14 @@ coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = s
 # Forward Feature Selection for Stratified Cox Proportional Hazards Models
 https://mathweb.ucsd.edu/~rxu/math284/model_sel.pdf
 
-We begin by constructing univariate stratified cox models for each predictor and identify significant factors
+We conduct forward-backward selection. In this model selection technique we first construct separate univariate models. Significant factors at $\alpha = 0.10$ within each univariate model are incorporated into a multivariate model. Insignificant factors at $\alpha = 0.10$ are then eliminated. We begin by constructing univariate stratified cox models for each predictor and identify significant factors.
 
 ```{r, echo = FALSE}
-anova(dbts.mod.ins, coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df))
+coxph(surv_obj ~ insured + race + bmi_group + strata(age_group), data = surv.df)
 
-anova(dbts.mod.ins, coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df))
+coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df)
 
-anova(dbts.mod.ins, coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df))
+coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df)
 ```
 
 ```{r, echo = FALSE}
@@ -413,8 +413,9 @@ ggsurvplot(km42_45,
            break.x.by = 1,
            fontsize = 3)
 
+
 survdiff(surv_obj ~ insured, 
-                  data = surv.df[surv.df$age_group=="42_45",])
+         data = surv.df[surv.df$age_group=="42_45",])
 ```
 
 For those who entered the study between ages 46 and 49, the risk for diabetes incidence is significantly higher for women who don't have insurance than for those who have insurance.
@@ -437,7 +438,7 @@ survdiff(surv_obj ~ insured,
                   data = surv.df[surv.df$age_group=="46_49",])
 ```
 
-For women who entered the study between ages 50 and 53, there is no significant difference in diabetes survival based on health insurance status.
+For women who entered the study between ages 50 and 53, there is no significant difference between the survival curves for those with insurance versus those without.
 
 ```{r 50_53, echo = FALSE}
 km50_53 = survfit(surv_obj ~ insured, 
@@ -459,5 +460,11 @@ survdiff(surv_obj ~ insured,
 ```
 
 
+## Notes:
 
+- The log rank test does not adjust for covariates
+- Changed diabetes incidence vs incident diabetes language
+- Changed plot titles
+- Income is the factor that makes insurance insignificant, check for dependence of categorical variables
+- Model selection process is not clear for survival models. Forward-backward selection yields the previously discovered model
 
