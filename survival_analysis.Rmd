@@ -237,6 +237,40 @@ surv.df$income = relevel(surv.df$income, ref = "50-99")
 levels(surv.df$income)
 ```
 
+## Chi-Squared Test of Indpendence
+
+We conduct a Pearson's Chi-Squared Test of Independence for each pair of factors. All pairs of factors are dependent, which makes sense as all factors are highly related to socioeconomic status (see p-values below). 
+
+_P-value for Chi-Squared Test of Independence for Race and Insurance Status_
+```{r, echo = FALSE}
+chisq.test(table(surv.df$race, surv.df$insured))$p.value
+```
+
+_P-value for Chi-Squared Test of Independence for Race and Baseline Household Income_
+```{r, echo = FALSE}
+chisq.test(table(surv.df$race, surv.df$income))$p.value
+```
+
+_P-value for Chi-Squared Test of Independence for Race and BMI Group_
+```{r, echo = FALSE}
+chisq.test(table(surv.df$race, surv.df$bmi_group))$p.value
+```
+_P-value for Chi-Squared Test of Independence for Insurance Status and Baseline Household Income_
+```{r, echo = FALSE}
+chisq.test(table(surv.df$insured, surv.df$income))$p.value
+```
+
+_P-value for Chi-Squared Test of Independence for Insurance Status and BMI Group_
+```{r, echo = FALSE}
+chisq.test(table(surv.df$insured, surv.df$bmi_group))$p.value
+```
+
+_P-value for Chi-Squared Test of Independence for Baseline Household Income and BMI Group_
+```{r, echo = FALSE}
+chisq.test(table(surv.df$income, surv.df$bmi_group))$p.value
+```
+
+
 ## Stratified Cox Model with Only Health Insurance Status
 
 We build a stratified Cox model with diabetes survival depending only on health insurance status and stratified by age group. To assess the validity of this output, we proceed to model diagnostics to assess the proportional hazards and no-interaction assumptions.
@@ -254,7 +288,6 @@ dbts.mod.ins
 We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). The proportional hazards assumption is met since the p-value is not significant ($p = 0.20$). Using the plot of the residuals below, we can see that the hazard ratio appears constant over time.
 
 ```{r, echo = FALSE}
-
 ##PH ASSUMPTION
 cox.zph(dbts.mod.ins)
 plot(cox.zph(dbts.mod.ins), 
@@ -368,35 +401,64 @@ dbts.mod.noinsure
 
 ## Stratified Cox Model with Covariate Interactions
 
-Race and household income may be confounding in their effects on health status, since certain race/ethnic groups are over-represented in lower income groups. We assess whether there is a significant interaction between these two covariates after adjusting for BMI and stratifying by age group. The model shows no significant interactions between any race or income group. Low significance of interaction groups may be due to very few replications of factor combinations, which results in a convergence warning in the model fitting.
+Race and household income may be confounding in their effects on health status, since certain race/ethnic groups are over-represented in lower income groups. We assess whether there is a significant interaction between these two covariates after adjusting for BMI and stratifying by age group. The model shows no significant interactions between any race or income group. Low significance of interaction groups may be due to very few replications of factor combinations, which results in a convergence warning in the model fitting. 
 
 ```{r, echo = FALSE}
 coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df)
 ```
 
-# Forward Feature Selection for Stratified Cox Proportional Hazards Models
-https://mathweb.ucsd.edu/~rxu/math284/model_sel.pdf
+# Stratified Cox Model with Insurance Status, Race, and BMI
 
-We conduct forward-backward selection. In this model selection technique we first construct separate univariate models. Significant factors at $\alpha = 0.10$ within each univariate model are incorporated into a multivariate model. Insignificant factors at $\alpha = 0.10$ are then eliminated. We begin by constructing univariate stratified cox models for each predictor and identify significant factors.
+To investigate which factor adjustment makes the effect of insurance status insignificant, we build separate stratified Cox models with race and one of the other factors: race, household income, or BMI group. From the models below, we see that adjusting for baseline household income makes the effect of insurance status insignificant. 
 
+__CPH Model for Insurance and Race__
 ```{r, echo = FALSE}
-coxph(surv_obj ~ insured + race + bmi_group + strata(age_group), data = surv.df)
+coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df)
+```
 
+__CPH Model for Insurance and Baseline Household Income__
+```{r, echo = FALSE}
 coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df)
+```
 
+__CPH Model for Insurance and BMI Group__
+```{r, echo = FALSE}
 coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df)
 ```
 
+We then consider a model with insurance status, race, and BMI group, stratified by age. We find that after adjusting for race, BMI group, and age, those with insurance verse those without insurance are at significantly lower risk for diabetes incidence (HR = 0.581, $p = 0.126$). We proceed to our model assumptions to validate this result. 
+
+_CPH Model for Insurance, Race, and BMI Group__
 ```{r, echo = FALSE}
-anova(coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df), coxph(surv_obj ~ insured + bmi_group + race + strata(age_group), data = surv.df))
-      
-anova(coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df), coxph(surv_obj ~ insured + bmi_group + income + strata(age_group), data = surv.df))
+dbts.mod.noincome = coxph(surv_obj ~ insured + bmi_group + race + strata(age_group), data = surv.df)
+
+summary(dbts.mod.noincome)
 ```
 
+First, we assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). The proportional hazards assumption is met for all factors since there are no significant p-values at $\alpha = 0.05$.
+
+```{r, echo = FALSE}
+#PH ASSUMPTION
+cox.zph(dbts.mod.noincome)
+par(mfrow = c(2,2))
+plot(cox.zph(dbts.mod.noincome))
+```
+We assess the no-interaction assumption between the strata and the covariates using a Chi-squared test of model difference with 14 degrees of freedom. We find no significant interaction between the strata and the covariates, insurance, race, and BMI group.
+
+```{r, echo = FALSE}
+#NO INTERACTION ASSUMPTION
+dbts.mod.noincome.interaction = coxph(surv_obj ~ (insured + race + bmi_group)*age_group - age_group + strata(age_group), data = surv.df)
+
+#Chi-Squared test of deviance
+anova(dbts.mod.noincome.interaction, dbts.mod.noincome)
+```
 
 # Kaplan-Meier Curves
 
-We construct separate unadjusted Kaplan-Meier curves for the effect of health insurance by each of the age strata. For those who entered the study at ages 42 t0 45, the risk for diabetes for those without insurance is significantly lower than for those with insurance ($p = 0.0005$).
+## Survival Curves by Insurance Status For Each Age Group
+
+We construct separate Kaplan-Meier curves for the effect of health insurance by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For those who entered the study between ages 42 to 45 and between ages 69 to 49 the risk for diabetes for those without insurance is significantly lower than for those with insurance ($p = 0.0005$ for ages 42 to 45, $p = 0.0001$ for ages 46-49). For women who entered the study between ages 50 and 53, there is no significant difference between the survival curves for those with insurance versus those without ($p = 0.3$).
+
 
 ```{r 42_45, echo = FALSE}
 km42_45 = survfit(surv_obj ~ insured, 
@@ -418,8 +480,6 @@ survdiff(surv_obj ~ insured,
          data = surv.df[surv.df$age_group=="42_45",])
 ```
 
-For those who entered the study between ages 46 and 49, the risk for diabetes incidence is significantly higher for women who don't have insurance than for those who have insurance.
-
 ```{r 46_49, echo = FALSE}
 km46_49 = survfit(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="46_49",])
@@ -437,8 +497,6 @@ ggsurvplot(km46_49,
 survdiff(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="46_49",])
 ```
-
-For women who entered the study between ages 50 and 53, there is no significant difference between the survival curves for those with insurance versus those without.
 
 ```{r 50_53, echo = FALSE}
 km50_53 = survfit(surv_obj ~ insured, 
@@ -459,12 +517,241 @@ survdiff(surv_obj ~ insured,
                   data = surv.df[surv.df$age_group=="50_53",])
 ```
 
+## Survival Curves by Race For Each Age Group
+
+We construct separate Kaplan-Meier curves for the effect of race by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p < 0.0001$ for ages 50-53). Differences appear especially large for Hispanic women.
+
+```{r, echo = FALSE}
+km42_45 = survfit(surv_obj ~ race, 
+                  data = surv.df[surv.df$age_group=="42_45",])
+ggsurvplot(km42_45, 
+           data = surv.df[surv.df$age_group=="42_45",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (42-45 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"))
+
+
+survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="42_45",])
+```
+
+
+```{r, echo = FALSE}
+km46_49 = survfit(surv_obj ~ race, 
+                  data = surv.df[surv.df$age_group=="46_49",])
+ggsurvplot(km46_49, 
+           data = surv.df[surv.df$age_group=="46_49",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (46-49 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"))
+
+
+survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="46_49",])
+```
+
+
+
+```{r, echo = FALSE}
+km50_53 = survfit(surv_obj ~ race, 
+                  data = surv.df[surv.df$age_group=="50_53",])
+ggsurvplot(km50_53, 
+           data = surv.df[surv.df$age_group=="50_53",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (50-53 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"))
+
+
+survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="50_53",])
+```
+
+## Survival Curves by Baseline Household Income for Each Age Group
+
+We construct separate Kaplan-Meier curves for the effect of baseline household by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p = 0.0002$ for ages 50-53). Among all age groups, these differences appear especially large in the lowest income group which experiences a faster decline in survival probability than other groups. This effect is particularly pronounced in women who entered the study between ages 50 and 53.
+
+```{r, echo = FALSE}
+
+##relevel for plotting
+surv.df$income = factor(surv.df$income, levels = c("<20", "20-49", "50-99", "100+"))
+
+km42_45 = survfit(surv_obj ~ income, 
+                  data = surv.df[surv.df$age_group=="42_45",])
+ggsurvplot(km42_45, 
+           data = surv.df[surv.df$age_group=="42_45",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (42-45 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.title = "Income in thousands of dollars",
+           legend.labs = c("<20", "20-49", "50-99", "100+"))
+
+
+survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="42_45",])
+```
+
+
+```{r, echo = FALSE}
+km46_49 = survfit(surv_obj ~ income, 
+                  data = surv.df[surv.df$age_group=="46_49",])
+ggsurvplot(km46_49, 
+           data = surv.df[surv.df$age_group=="46_49",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (46-49 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.title = "Income in thousands of dollars",
+           legend.labs = c("<20", "20-49", "50-99", "100+"))
+
+
+survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="46_49",])
+```
+
+
+```{r, echo = FALSE}
+km50_53 = survfit(surv_obj ~ income, 
+                  data = surv.df[surv.df$age_group=="50_53",])
+ggsurvplot(km50_53, 
+           data = surv.df[surv.df$age_group=="50_53",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (50-53 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.title = "Income in thousands of dollars",
+           legend.labs = c("<20", "20-49", "50-99", "100+"))
+
+
+survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="50_53",])
+```
+
+## Survival Curves by BMI Group for Each Age Group
+
+We construct separate Kaplan-Meier curves for the effect of baseline household by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p < 0.0001$ for ages 50-53). Across all age groups, higher BMI groups appear to experience a faster decline in survival probability.
+
+```{r, echo = FALSE}
+
+km42_45 = survfit(surv_obj ~ bmi_group, 
+                  data = surv.df[surv.df$age_group=="42_45",])
+ggsurvplot(km42_45, 
+           data = surv.df[surv.df$age_group=="42_45",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (42-45 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.title = "BMI Group",
+           legend.labs = c("<30", "30_40", "40+"))
+
+
+survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="42_45",])
+```
+
+
+```{r, echo = FALSE}
+km46_49 = survfit(surv_obj ~ bmi_group, 
+                  data = surv.df[surv.df$age_group=="46_49",])
+ggsurvplot(km46_49, 
+           data = surv.df[surv.df$age_group=="46_49",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (46-49 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.title = "BMI Group",
+           legend.labs = c("<30", "30_40", "40+"))
+
+
+survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="46_49",])
+```
+
+
+```{r, echo = FALSE}
+km50_53 = survfit(surv_obj ~ bmi_group, 
+                  data = surv.df[surv.df$age_group=="50_53",])
+ggsurvplot(km50_53, 
+           data = surv.df[surv.df$age_group=="50_53",], 
+           conf.int=FALSE, 
+           xlab = "Time (t)", 
+           ylab = "Survival Probability", 
+           title = "Survival Function for Time to Diabetes (50-53 Age Group)",
+           ylim = c(0.6, 1.0),
+           risk.table = TRUE,
+           risk.table.height = .5,
+           break.x.by = 1,
+           fontsize = 3,
+           legend = "top",
+           legend.title = "BMI Group",
+           legend.labs = c("<30", "30_40", "40+"))
+
+
+survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="50_53",])
+```
+
 
 ## Notes:
 
 - The log rank test does not adjust for covariates
-- Changed diabetes incidence vs incident diabetes language
-- Changed plot titles
-- Income is the factor that makes insurance insignificant, check for dependence of categorical variables
-- Model selection process is not clear for survival models. Forward-backward selection yields the previously discovered model
+- Forward model selection process is not clear for survival models.
+- Forward-backward selection yields the previously discovered model (the model without insurance) https://mathweb.ucsd.edu/~rxu/math284/model_sel.pdf
+- If we don't adjust for income, the effect of insurance remains significant, even after adjusting for race, BMI, and age.
+
+
 
