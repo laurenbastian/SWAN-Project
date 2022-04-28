@@ -16,3 +16,5 @@ swan_data/
 thesis_bib.bib
 thesis_biblatex.bib
 build_survival_dataset.R
+build_dataset.R
+build_models.R
