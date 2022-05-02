@@ -50,11 +50,13 @@ surv.df$insured = as.factor(surv.df$insured)
 
 surv.df$event = as.numeric(surv.df$event)
 
+##Create surv object in surv.df
+surv.df$surv_obj = with(surv.df, Surv(t2event, event))
+
+attach(surv.df)
+
 ```
 
-```{r Create surv object in surv.df , echo = FALSE}
-surv.df$surv_obj = with(surv.df, Surv(t2event, event))
-```
 
 # Research Objectives
 
@@ -65,6 +67,21 @@ How do race and income affect onset of diabetes among middle-aged American women
 How does yearly household income, BMI, race, and insurance affect the onset of diabetes among the middle-aged American women? Are there any interactions between these factors?
 
 # Descriptive Statistics
+
+Histogram of time to event for uncensored individuals. Time to event is left skewed with a peak at 10 years.  
+
+```{r, echo = FALSE}
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+
+ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t2event)) +
+  geom_histogram(binwidth = 1, fill = '#00BFC4', color = 'white') +
+  theme_bw() +
+  labs(title = "Time to Event for Uncensored Women") +
+  xlab("Time to Event") +
+  ylab("Counts") +
+  theme(text = element_text(family = "Times"))
+```
+
 
 The mean age at $t = 0$ is 45.899.
 ```{r descriptives, echo = FALSE}
@@ -105,10 +122,20 @@ Distribution of self-reported household income at baseline.
 table(surv.df$income)
 ```
 
-Histogram of continuous BMI. 
+Histogram of continuous BMI. BMI group cutoff points are indicated by vertical dashed lines.
 
 ```{r, echo = FALSE}
-hist(surv.df$t0_bmi, main = "Baseline BMI (Continuous)", xlab = "BMI")
+cutoffs = c(30, 40)
+
+ggplot(surv.df, aes(x = t0_bmi)) +
+  geom_histogram(binwidth = 1, fill = '#00BFC4', color = 'white') +
+  theme_bw() +
+  labs(title = "Baseline BMI") +
+  xlab("BMI") +
+  ylab("Counts") +
+  geom_vline(xintercept = cutoffs, size = 1, linetype = "longdash") +
+  theme(text = element_text(family = "Times"))
+
 ```
 
 Distribution of BMI groups. There are 186 women in the highest BMI group.
@@ -166,7 +193,7 @@ CrossTable(surv.df$race, surv.df$bmi_group,
 Incident diabetes by race.
 
 ```{r, echo = FALSE}
-##EVENT INCIDENCE BY RACE
+#Incident Diabetes BY RACE
 xtabs(~race + event, data = surv.df)
 ```
 
@@ -473,8 +500,8 @@ ggsurvplot(km42_45,
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
-           fontsize = 3)
-
+           fontsize = 3,
+           ggtheme = theme_classic2(base_family = "Times"))
 
 survdiff(surv_obj ~ insured, 
          data = surv.df[surv.df$age_group=="42_45",])
@@ -493,7 +520,9 @@ ggsurvplot(km46_49,
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
-           fontsize = 3)
+           fontsize = 3,
+           ggtheme = theme_classic2(base_family = "Times"))
+
 survdiff(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="46_49",])
 ```
@@ -511,7 +540,8 @@ ggsurvplot(km50_53,
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
-           fontsize = 3)
+           fontsize = 3,
+           ggtheme = theme_classic2(base_family = "Times"))
 
 survdiff(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="50_53",])
@@ -536,7 +566,8 @@ ggsurvplot(km42_45,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
-           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"))
+           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ race, 
@@ -559,7 +590,8 @@ ggsurvplot(km46_49,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
-           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"))
+           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ race, 
@@ -583,7 +615,8 @@ ggsurvplot(km50_53,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
-           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"))
+           legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ race, 
@@ -614,7 +647,8 @@ ggsurvplot(km42_45,
            fontsize = 3,
            legend = "top",
            legend.title = "Income in thousands of dollars",
-           legend.labs = c("<20", "20-49", "50-99", "100+"))
+           legend.labs = c("<20", "20-49", "50-99", "100+"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ income, 
@@ -638,7 +672,8 @@ ggsurvplot(km46_49,
            fontsize = 3,
            legend = "top",
            legend.title = "Income in thousands of dollars",
-           legend.labs = c("<20", "20-49", "50-99", "100+"))
+           legend.labs = c("<20", "20-49", "50-99", "100+"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ income, 
@@ -662,7 +697,8 @@ ggsurvplot(km50_53,
            fontsize = 3,
            legend = "top",
            legend.title = "Income in thousands of dollars",
-           legend.labs = c("<20", "20-49", "50-99", "100+"))
+           legend.labs = c("<20", "20-49", "50-99", "100+"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ income, 
@@ -690,7 +726,8 @@ ggsurvplot(km42_45,
            fontsize = 3,
            legend = "top",
            legend.title = "BMI Group",
-           legend.labs = c("<30", "30_40", "40+"))
+           legend.labs = c("<30", "30_40", "40+"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ bmi_group, 
@@ -714,7 +751,8 @@ ggsurvplot(km46_49,
            fontsize = 3,
            legend = "top",
            legend.title = "BMI Group",
-           legend.labs = c("<30", "30_40", "40+"))
+           legend.labs = c("<30", "30_40", "40+"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ bmi_group, 
@@ -738,7 +776,8 @@ ggsurvplot(km50_53,
            fontsize = 3,
            legend = "top",
            legend.title = "BMI Group",
-           legend.labs = c("<30", "30_40", "40+"))
+           legend.labs = c("<30", "30_40", "40+"),
+           ggtheme = theme_classic2(base_family = "Times"))
 
 
 survdiff(surv_obj ~ bmi_group, 
