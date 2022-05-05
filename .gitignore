@@ -18,3 +18,9 @@ thesis_biblatex.bib
 build_survival_dataset.R
 build_dataset.R
 build_models.R
+Paper Annotations/
+survival_analysis.md
+survival_analysis_cache/
+survival_analysis_files/
+survival_thesis_LB_5-2-22.pdf
+thesis_bib_5-2.bib
