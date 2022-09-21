@@ -1,8 +1,8 @@
-## ----setup, include=FALSE--------------------------------------------------------
+## ----setup, include=FALSE-------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
 
-## ----setup images, include = FALSE-----------------------------------------------
+## ----setup images, include = FALSE----------------------------------
 knitr::opts_chunk$set(dev = "png",
                       dpi = 300,
                       echo = FALSE,
@@ -53,7 +53,7 @@ attach(surv.df)
 
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----Hist_t2event_IncidentDiabetes, echo = FALSE--------------------
 windowsFonts(Times=windowsFont("TT Times New Roman"))
 
 event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t2event)) +
@@ -67,7 +67,21 @@ event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t2event)) +
 event.hist
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----Hist_Age_IncidentDiabetes, echo = FALSE------------------------
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+
+event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t0_age + t2event)) +
+  geom_histogram(binwidth = 1, fill = '#00BFC4', color = 'white') +
+  theme_bw() +
+  labs(title = "Age of Individuals w/ Incident Diabetes") +
+  xlab("Age") +
+  ylab("Counts") +
+  theme(text = element_text(family = "Times"))
+
+event.hist
+
+
+## ----Hist_t2event_allsubjects, echo = FALSE-------------------------
 all.subjects = surv.df$t2event
 event.subjects = surv.df$t2event[surv.df$censored == 0]
 all.subjects = data.frame("t2event" = all.subjects, "subset" = rep("All Subjects", 2686))
@@ -87,37 +101,37 @@ ggplot(data = hist.data, aes(x = t2event, fill = subset)) +
 
 
 
-## ----descriptives, echo = FALSE--------------------------------------------------
+## ----descriptives, echo = FALSE-------------------------------------
 ##MEAN AGE AT t = 0
 mean(surv.df$t0_age)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##AGE GROUP DISTRIBUTION
 table(surv.df$age_group)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##INSURANCE STATUS
 #6.65% of participants report no insurance during screening study
 table(surv.df$insured)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 nrow(surv.df[surv.df$insured == "No",]) / nrow(surv.df) 
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##RACE
 table(surv.df$race)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##HOUSEHOLD INCOME
 table(surv.df$income)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----Hist_BaselineBMI, echo = FALSE---------------------------------
 cutoffs = c(30, 40)
 
 ggplot(surv.df, aes(x = t0_bmi)) +
@@ -131,17 +145,17 @@ ggplot(surv.df, aes(x = t0_bmi)) +
 
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 table(surv.df$bmi_group)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##OVERALL EVENT INCIDENCE DURING STUDY
 table(surv.df$event)
 274/2412
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##FACTOR CROSS TABS
 ftable(xtabs(~race + income, data = surv.df))
 
@@ -151,7 +165,7 @@ CrossTable(surv.df$race, surv.df$income,
            digits = 2)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##FACTOR CROSS TABS
 ftable(xtabs(~race + insured, data = surv.df))
 
@@ -161,7 +175,7 @@ CrossTable(surv.df$race, surv.df$insured,
            digits = 2)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ftable(xtabs(~race + bmi_group, data = surv.df))
 
 CrossTable(surv.df$race, surv.df$bmi_group,
@@ -170,46 +184,46 @@ CrossTable(surv.df$race, surv.df$bmi_group,
            digits = 2)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 #Incident Diabetes BY RACE
 xtabs(~race + event, data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 xtabs(~race + event, data = surv.df)[,2] / 
   xtabs(~race + event, data = surv.df)[,1]
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##EVENT INCIDENCE BY INSURANCE STATUS
 xtabs(~insured + event, data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 xtabs(~insured + event, data = surv.df)[,2] / 
   xtabs(~insured + event, data = surv.df)[,1]
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##EVENT INCIDENCE BY HOUSEHOLD INCOME
 xtabs(~income + event, data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 xtabs(~income + event, data = surv.df)[,2] / 
   xtabs(~income + event, data = surv.df)[,1]
 
 
-## ---- echo =  FALSE--------------------------------------------------------------
+## ---- echo =  FALSE-------------------------------------------------
 xtabs(~bmi_group + event, data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 xtabs(~bmi_group + event, data = surv.df)[,2] / 
   xtabs(~bmi_group + event, data = surv.df)[,1]
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 surv.df$insured = relevel(surv.df$insured, ref = "No")
 levels(surv.df$insured)
 
@@ -223,31 +237,31 @@ surv.df$income = relevel(surv.df$income, ref = "50-99")
 levels(surv.df$income)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 chisq.test(table(surv.df$race, surv.df$insured))$p.value
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 chisq.test(table(surv.df$race, surv.df$income))$p.value
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 chisq.test(table(surv.df$race, surv.df$bmi_group))$p.value
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 chisq.test(table(surv.df$insured, surv.df$income))$p.value
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 chisq.test(table(surv.df$insured, surv.df$bmi_group))$p.value
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 chisq.test(table(surv.df$income, surv.df$bmi_group))$p.value
 
 
-## ----insurance only, echo = FALSE------------------------------------------------
+## ----insurance only, echo = FALSE-----------------------------------
 ##STRATIFIED COX MODEL WITH INSURANCE STRATIFIED BY AGE GROUP
 
 #BUILD MODEL
@@ -257,14 +271,14 @@ dbts.mod.ins
 
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----SchoenResid_insured, echo = FALSE------------------------------
 ##PH ASSUMPTION
 cox.zph(dbts.mod.ins)
 plot(cox.zph(dbts.mod.ins), 
      main = "Scaled Schoenfeld Residuals (~insured + strata(age_group)")
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 ##NO INTERACTION ASSUMPTION
 #The coefficients do not appear very different
 coef(coxph(surv_obj ~ insured, 
@@ -284,21 +298,21 @@ anova(dbts.mod.interaction, dbts.mod.ins)
 
 
 
-## ----all factors, echo = FALSE---------------------------------------------------
+## ----all factors, echo = FALSE--------------------------------------
 ##STRATIFIED COX MODEL WITH INSURANCE, RACE, INCOME, and BMI group STRATIFIED BY AGE
 #BUILD MODEL
 dbts.mod.all = coxph(surv_obj ~ insured + race + income + bmi_group + strata(age_group), data = surv.df)
 dbts.mod.all
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----SchoenResid_insured_race_income_bmi, echo = FALSE--------------
 #PH ASSUMPTION
 cox.zph(dbts.mod.all)
 par(mfrow = c(2,2))
 plot(cox.zph(dbts.mod.all))
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 #NO INTERACTION ASSUMPTION
 coef(coxph(surv_obj ~ insured + race + income + bmi_group, 
       data =surv.df[surv.df$age_group == "42_45",]))
@@ -313,7 +327,7 @@ dbts.mod.all.interaction = coxph(surv_obj ~ (insured + race + income + bmi_group
 anova(dbts.mod.all.interaction, dbts.mod.all)
 
 
-## ----reduced model, echo = FALSE-------------------------------------------------
+## ----reduced model, echo = FALSE------------------------------------
 ##STRATIFIED COX MODEL WITH RACE, BMI, AND INCOME, AND STRATIFIED BY AGE
 #BUILD MODEL
 dbts.mod.noinsure = coxph(surv_obj ~ race + income + bmi_group + strata(age_group), data = surv.df)
@@ -323,14 +337,14 @@ dbts.mod.noinsure
 anova(dbts.mod.noinsure, dbts.mod.all)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----ShoenResid_race_income_bmi, echo = FALSE-----------------------
 #PH ASSUMPTION
 cox.zph(dbts.mod.noinsure)
 par(mfrow = c(2,2))
 plot(cox.zph(dbts.mod.noinsure))
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 #NO INTERACTION ASSUMPTION
 coef(coxph(surv_obj ~ race + income + bmi_group, data = surv.df[surv.df$age_group == "42_45",]))
 coef(coxph(surv_obj ~ race + income + bmi_group, data = surv.df[surv.df$age_group == "46_49",]))
@@ -343,41 +357,41 @@ anova(dbts.mod.noinsure.interaction, dbts.mod.noinsure)
 
 
 
-## ----selected model summary, echo = FALSE----------------------------------------
+## ----selected model summary, echo = FALSE---------------------------
 #MODEL SUMMARY
 dbts.mod.noinsure
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 dbts.mod.noincome = coxph(surv_obj ~ insured + bmi_group + race + strata(age_group), data = surv.df)
 
 summary(dbts.mod.noincome)
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----ShoenResid_insured_bmi_race, echo = FALSE----------------------
 #PH ASSUMPTION
 cox.zph(dbts.mod.noincome)
 par(mfrow = c(2,2))
 plot(cox.zph(dbts.mod.noincome))
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------
 #NO INTERACTION ASSUMPTION
 dbts.mod.noincome.interaction = coxph(surv_obj ~ (insured + race + bmi_group)*age_group - age_group + strata(age_group), data = surv.df)
 
@@ -385,7 +399,7 @@ dbts.mod.noincome.interaction = coxph(surv_obj ~ (insured + race + bmi_group)*ag
 anova(dbts.mod.noincome.interaction, dbts.mod.noincome)
 
 
-## ----42_45, echo = FALSE---------------------------------------------------------
+## ----SurvCurve_42_45_insurance, echo = FALSE------------------------
 km42_45 = survfit(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="42_45",])
 ggsurvplot(km42_45, 
@@ -395,17 +409,21 @@ ggsurvplot(km42_45,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (42-45 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Insurance Status",
+           legend.labs = c("Uninsured", "Insured"),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 survdiff(surv_obj ~ insured, 
          data = surv.df[surv.df$age_group=="42_45",])
 
 
-## ----46_49, echo = FALSE---------------------------------------------------------
+
+
+## ----SurvCurve_46_49_insurance, echo = FALSE------------------------
 km46_49 = survfit(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="46_49",])
 ggsurvplot(km46_49, 
@@ -415,6 +433,8 @@ ggsurvplot(km46_49,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (46-49 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Insurance Status",
+           legend.labs = c("Uninsured", "Insured"),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
@@ -425,7 +445,7 @@ survdiff(surv_obj ~ insured,
                   data = surv.df[surv.df$age_group=="46_49",])
 
 
-## ----50_53, echo = FALSE---------------------------------------------------------
+## ----SurvCurve_50_53_insurance, echo = FALSE------------------------
 km50_53 = survfit(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="50_53",])
 ggsurvplot(km50_53, 
@@ -435,17 +455,19 @@ ggsurvplot(km50_53,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (50-53 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Insurance Status",
+           legend.labs = c("Uninsured", "Insured"),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 survdiff(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="50_53",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## ----SurvCurve_42_45_race, echo = FALSE-----------------------------
 km42_45 = survfit(surv_obj ~ race, 
                   data = surv.df[surv.df$age_group=="42_45",])
 ggsurvplot(km42_45, 
@@ -455,20 +477,28 @@ ggsurvplot(km42_45,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (42-45 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Race",
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
            legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ race, 
          data = surv.df[surv.df$age_group=="42_45",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="42_45",])
+
+
+## ----SurvCurve_46_49_race, echo = FALSE-----------------------------
 km46_49 = survfit(surv_obj ~ race, 
                   data = surv.df[surv.df$age_group=="46_49",])
 ggsurvplot(km46_49, 
@@ -478,20 +508,27 @@ ggsurvplot(km46_49,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (46-49 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Race",
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
            legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ race, 
          data = surv.df[surv.df$age_group=="46_49",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="46_49",])
+
+
+## ----SurvCurve_50_53_race, echo = FALSE-----------------------------
 km50_53 = survfit(surv_obj ~ race, 
                   data = surv.df[surv.df$age_group=="50_53",])
 ggsurvplot(km50_53, 
@@ -501,20 +538,27 @@ ggsurvplot(km50_53,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (50-53 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Race",
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
            legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ race, 
          data = surv.df[surv.df$age_group=="50_53",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="50_53",])
+
+
+## ----SurvCurve_42_45_income, echo = FALSE---------------------------
 
 ##relevel for plotting
 surv.df$income = factor(surv.df$income, levels = c("<20", "20-49", "50-99", "100+"))
@@ -535,14 +579,20 @@ ggsurvplot(km42_45,
            legend = "top",
            legend.title = "Income in thousands of dollars",
            legend.labs = c("<20", "20-49", "50-99", "100+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ income, 
          data = surv.df[surv.df$age_group=="42_45",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="42_45",])
+
+
+## ----SurvCurve_46_49_income, echo = FALSE---------------------------
 km46_49 = survfit(surv_obj ~ income, 
                   data = surv.df[surv.df$age_group=="46_49",])
 ggsurvplot(km46_49, 
@@ -559,14 +609,20 @@ ggsurvplot(km46_49,
            legend = "top",
            legend.title = "Income in thousands of dollars",
            legend.labs = c("<20", "20-49", "50-99", "100+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ income, 
          data = surv.df[surv.df$age_group=="46_49",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="46_49",])
+
+
+## ----SurvCurve_50_53_income, echo = FALSE---------------------------
 km50_53 = survfit(surv_obj ~ income, 
                   data = surv.df[surv.df$age_group=="50_53",])
 ggsurvplot(km50_53, 
@@ -583,14 +639,21 @@ ggsurvplot(km50_53,
            legend = "top",
            legend.title = "Income in thousands of dollars",
            legend.labs = c("<20", "20-49", "50-99", "100+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ income, 
          data = surv.df[surv.df$age_group=="50_53",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="50_53",],
+         p.adjust.method = "bonferroni")
+
+
+## ----SurvCurve_42_45_bmi, echo = FALSE------------------------------
 
 km42_45 = survfit(surv_obj ~ bmi_group, 
                   data = surv.df[surv.df$age_group=="42_45",])
@@ -608,14 +671,20 @@ ggsurvplot(km42_45,
            legend = "top",
            legend.title = "BMI Group",
            legend.labs = c("<30", "30_40", "40+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ bmi_group, 
          data = surv.df[surv.df$age_group=="42_45",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="42_45",])
+
+
+## ----SurvCurve_46_49_bmi, echo = FALSE------------------------------
 km46_49 = survfit(surv_obj ~ bmi_group, 
                   data = surv.df[surv.df$age_group=="46_49",])
 ggsurvplot(km46_49, 
@@ -632,14 +701,20 @@ ggsurvplot(km46_49,
            legend = "top",
            legend.title = "BMI Group",
            legend.labs = c("<30", "30_40", "40+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ bmi_group, 
          data = surv.df[surv.df$age_group=="46_49",])
 
 
-## ---- echo = FALSE---------------------------------------------------------------
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="46_49",])
+
+
+## ----SurvCurve_50_53_bmi, echo = FALSE------------------------------
 km50_53 = survfit(surv_obj ~ bmi_group, 
                   data = surv.df[surv.df$age_group=="50_53",])
 ggsurvplot(km50_53, 
@@ -656,9 +731,15 @@ ggsurvplot(km50_53,
            legend = "top",
            legend.title = "BMI Group",
            legend.labs = c("<30", "30_40", "40+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 
+## -------------------------------------------------------------------
 survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="50_53",])
+
+
+## -------------------------------------------------------------------
+pairwise_survdiff(surv_obj ~ bmi_group, 
          data = surv.df[surv.df$age_group=="50_53",])
 

@@ -545,14 +545,18 @@ ggsurvplot(km42_45,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (42-45 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Insurance Status",
+           legend.labs = c("Uninsured", "Insured"),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 survdiff(surv_obj ~ insured, 
          data = surv.df[surv.df$age_group=="42_45",])
+
+
 ```
 
 ```{r SurvCurve_46_49_insurance, echo = FALSE}
@@ -565,6 +569,8 @@ ggsurvplot(km46_49,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (46-49 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Insurance Status",
+           legend.labs = c("Uninsured", "Insured"),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
@@ -585,15 +591,18 @@ ggsurvplot(km50_53,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (50-53 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Insurance Status",
+           legend.labs = c("Uninsured", "Insured"),
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
 survdiff(surv_obj ~ insured, 
                   data = surv.df[surv.df$age_group=="50_53",])
 ```
+
 
 ## Survival Curves by Race For Each Age Group
 
@@ -609,16 +618,24 @@ ggsurvplot(km42_45,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (42-45 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Race",
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
            legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
 
+```
 
+```{r}
 survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="42_45",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ race, 
          data = surv.df[surv.df$age_group=="42_45",])
 ```
 
@@ -633,16 +650,23 @@ ggsurvplot(km46_49,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (46-49 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Race",
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
            legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="46_49",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ race, 
          data = surv.df[surv.df$age_group=="46_49",])
 ```
 
@@ -658,22 +682,29 @@ ggsurvplot(km50_53,
            ylab = "Survival Probability", 
            title = "Survival Function for Time to Diabetes (50-53 Age Group)",
            ylim = c(0.6, 1.0),
+           legend.title = "Race",
            risk.table = TRUE,
            risk.table.height = .5,
            break.x.by = 1,
            fontsize = 3,
            legend = "top",
            legend.labs = c("White", "Black/African American", "Chinese/Chinese American", "Japanese/Japanese American", "Hispanic"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ race, 
+         data = surv.df[surv.df$age_group=="50_53",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ race, 
          data = surv.df[surv.df$age_group=="50_53",])
 ```
 
 ## Survival Curves by Baseline Household Income for Each Age Group
 
-We construct separate Kaplan-Meier curves for the effect of baseline household by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p = 0.0002$ for ages 50-53). Among all age groups, these differences appear especially large in the lowest income group which experiences a faster decline in survival probability than other groups. This effect is particularly pronounced in women who entered the study between ages 50 and 53.
+We construct separate Kaplan-Meier curves for the effect of baseline household income by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p = 0.0002$ for ages 50-53). Among all age groups, these differences appear especially large in the lowest income group which experiences a faster decline in survival probability than other groups. This effect is particularly pronounced in women who entered the study between ages 50 and 53.
 
 ```{r SurvCurve_42_45_income, echo = FALSE}
 
@@ -696,10 +727,16 @@ ggsurvplot(km42_45,
            legend = "top",
            legend.title = "Income in thousands of dollars",
            legend.labs = c("<20", "20-49", "50-99", "100+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="42_45",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ income, 
          data = surv.df[surv.df$age_group=="42_45",])
 ```
 
@@ -721,10 +758,16 @@ ggsurvplot(km46_49,
            legend = "top",
            legend.title = "Income in thousands of dollars",
            legend.labs = c("<20", "20-49", "50-99", "100+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="46_49",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ income, 
          data = surv.df[surv.df$age_group=="46_49",])
 ```
 
@@ -746,16 +789,23 @@ ggsurvplot(km50_53,
            legend = "top",
            legend.title = "Income in thousands of dollars",
            legend.labs = c("<20", "20-49", "50-99", "100+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ income, 
          data = surv.df[surv.df$age_group=="50_53",])
 ```
 
+```{r}
+pairwise_survdiff(surv_obj ~ income, 
+         data = surv.df[surv.df$age_group=="50_53",],
+         p.adjust.method = "bonferroni")
+```
+
 ## Survival Curves by BMI Group for Each Age Group
 
-We construct separate Kaplan-Meier curves for the effect of baseline household by each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p < 0.0001$ for ages 50-53). Across all age groups, higher BMI groups appear to experience a faster decline in survival probability.
+We construct separate Kaplan-Meier curves for the effect of baseline BMI for each of the age strata and use a log-rank test to detect significant differences between the observed survival curves. For all age groups, survival curves significantly differ by race ($p < 0.0001$ for ages 43-46, $p < 0.0001$ for ages 46-49, $p < 0.0001$ for ages 50-53). Across all age groups, higher BMI groups appear to experience a faster decline in survival probability.
 
 ```{r SurvCurve_42_45_bmi, echo = FALSE}
 
@@ -775,10 +825,16 @@ ggsurvplot(km42_45,
            legend = "top",
            legend.title = "BMI Group",
            legend.labs = c("<30", "30_40", "40+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="42_45",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ bmi_group, 
          data = surv.df[surv.df$age_group=="42_45",])
 ```
 
@@ -800,10 +856,16 @@ ggsurvplot(km46_49,
            legend = "top",
            legend.title = "BMI Group",
            legend.labs = c("<30", "30_40", "40+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="46_49",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ bmi_group, 
          data = surv.df[surv.df$age_group=="46_49",])
 ```
 
@@ -825,10 +887,16 @@ ggsurvplot(km50_53,
            legend = "top",
            legend.title = "BMI Group",
            legend.labs = c("<30", "30_40", "40+"),
-           ggtheme = theme_classic2(base_family = "Times"))
+           ggtheme = theme_classic2())
+```
 
-
+```{r}
 survdiff(surv_obj ~ bmi_group, 
+         data = surv.df[surv.df$age_group=="50_53",])
+```
+
+```{r}
+pairwise_survdiff(surv_obj ~ bmi_group, 
          data = surv.df[surv.df$age_group=="50_53",])
 ```
 
