@@ -18,11 +18,13 @@ knitr::opts_chunk$set(dev = "png",
 #install.packages("survminer")
 #install.packages("rms")
 #install.packages("gmodels")
+#install.packages("lsr")
 library(survival)
 library(ggplot2)
 library(survminer)
 library(rms)
 library(gmodels)
+library(lsr)
 
 ##LOAD DATA
 source("build_survival_dataset_updated.R")
@@ -62,9 +64,14 @@ event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t2event)) +
   labs(title = "Time to Event for Individuals w/ Incident Diabetes") +
   xlab("Time to Event") +
   ylab("Counts") +
+  geom_vline(xintercept = mean(surv.df[surv.df$censored == 0,]$t2event), size = 1, linetype = "longdash") +
   theme(text = element_text(family = "Times"))
 
 event.hist
+
+## -------------------------------------------------------------------
+mean(surv.df[surv.df$censored == 0,]$t2event)
+sd(surv.df[surv.df$censored == 0,]$t2event)
 
 
 ## ----Hist_Age_IncidentDiabetes, echo = FALSE------------------------
@@ -76,9 +83,15 @@ event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t0_age + t2e
   labs(title = "Age of Individuals w/ Incident Diabetes") +
   xlab("Age") +
   ylab("Counts") +
+  geom_vline(xintercept = mean(surv.df[surv.df$censored == 0,]$t2event + surv.df[surv.df$censored == 0,]$t0_age), size = 1, linetype = "longdash") +
   theme(text = element_text(family = "Times"))
 
 event.hist
+
+
+## -------------------------------------------------------------------
+mean(surv.df[surv.df$censored == 0,]$t0_age + surv.df[surv.df$censored == 0,]$t2event)
+sd(surv.df[surv.df$censored == 0,]$t0_age + surv.df[surv.df$censored == 0,]$t2event)
 
 
 ## ----Hist_t2event_allsubjects, echo = FALSE-------------------------
@@ -237,28 +250,54 @@ surv.df$income = relevel(surv.df$income, ref = "50-99")
 levels(surv.df$income)
 
 
-## ---- echo = FALSE--------------------------------------------------
-chisq.test(table(surv.df$race, surv.df$insured))$p.value
+## -------------------------------------------------------------------
+table(surv.df$race, surv.df$insured)
+chisq.test(table(surv.df$race, surv.df$insured))
+
+## -------------------------------------------------------------------
+cramersV(table(surv.df$race, surv.df$insured))
 
 
-## ---- echo = FALSE--------------------------------------------------
-chisq.test(table(surv.df$race, surv.df$income))$p.value
+## -------------------------------------------------------------------
+table(surv.df$race, surv.df$income)
+chisq.test(table(surv.df$race, surv.df$income))
+
+## -------------------------------------------------------------------
+cramersV(table(surv.df$race, surv.df$income))
 
 
-## ---- echo = FALSE--------------------------------------------------
-chisq.test(table(surv.df$race, surv.df$bmi_group))$p.value
+## -------------------------------------------------------------------
+table(surv.df$race, surv.df$bmi_group)
+chisq.test(table(surv.df$race, surv.df$bmi_group))
+
+## -------------------------------------------------------------------
+cramersV(table(surv.df$race, surv.df$bmi_group))
 
 
-## ---- echo = FALSE--------------------------------------------------
-chisq.test(table(surv.df$insured, surv.df$income))$p.value
+## -------------------------------------------------------------------
+table(surv.df$insured, surv.df$income)
+chisq.test(table(surv.df$insured, surv.df$income))
 
 
-## ---- echo = FALSE--------------------------------------------------
-chisq.test(table(surv.df$insured, surv.df$bmi_group))$p.value
+## -------------------------------------------------------------------
+cramersV(table(surv.df$insured, surv.df$income))
 
 
-## ---- echo = FALSE--------------------------------------------------
-chisq.test(table(surv.df$income, surv.df$bmi_group))$p.value
+## -------------------------------------------------------------------
+table(surv.df$insured, surv.df$bmi_group)
+chisq.test(table(surv.df$insured, surv.df$bmi_group))
+
+
+## -------------------------------------------------------------------
+cramersV(table(surv.df$insured, surv.df$bmi_group))
+
+
+## -------------------------------------------------------------------
+table(surv.df$income, surv.df$bmi_group)
+chisq.test(table(surv.df$income, surv.df$bmi_group))
+
+## -------------------------------------------------------------------
+cramersV(table(surv.df$income, surv.df$bmi_group))
 
 
 ## ----insurance only, echo = FALSE-----------------------------------
@@ -363,19 +402,25 @@ dbts.mod.noinsure
 
 
 ## ---- echo = FALSE--------------------------------------------------
-coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df)
-
-
-## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df)
+
+cox.zph(coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df))
 
 
 ## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df)
+cox.zph(coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df))
+
+
+## ---- echo = FALSE--------------------------------------------------
+coxph(surv_obj ~ insured + strata(income) + strata(age_group), data = surv.df)
+cox.zph(coxph(surv_obj ~ insured + strata(income) + strata(age_group), data = surv.df))
+
 
 
 ## ---- echo = FALSE--------------------------------------------------
 coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df)
+cox.zph(coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df))
 
 
 ## ---- echo = FALSE--------------------------------------------------

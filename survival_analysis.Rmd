@@ -31,11 +31,13 @@ The data come from the Study of Women's Health Across the Nation (SWAN), a longi
 #install.packages("survminer")
 #install.packages("rms")
 #install.packages("gmodels")
+#install.packages("lsr")
 library(survival)
 library(ggplot2)
 library(survminer)
 library(rms)
 library(gmodels)
+library(lsr)
 
 ##LOAD DATA
 source("build_survival_dataset_updated.R")
@@ -88,9 +90,14 @@ event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t2event)) +
   labs(title = "Time to Event for Individuals w/ Incident Diabetes") +
   xlab("Time to Event") +
   ylab("Counts") +
+  geom_vline(xintercept = mean(surv.df[surv.df$censored == 0,]$t2event), size = 1, linetype = "longdash") +
   theme(text = element_text(family = "Times"))
 
 event.hist
+```
+```{r}
+mean(surv.df[surv.df$censored == 0,]$t2event)
+sd(surv.df[surv.df$censored == 0,]$t2event)
 ```
 
 ```{r Hist_Age_IncidentDiabetes, echo = FALSE}
@@ -102,9 +109,15 @@ event.hist = ggplot(data = surv.df[surv.df$censored == 0,], aes(x = t0_age + t2e
   labs(title = "Age of Individuals w/ Incident Diabetes") +
   xlab("Age") +
   ylab("Counts") +
+  geom_vline(xintercept = mean(surv.df[surv.df$censored == 0,]$t2event + surv.df[surv.df$censored == 0,]$t0_age), size = 1, linetype = "longdash") +
   theme(text = element_text(family = "Times"))
 
 event.hist
+```
+
+```{r}
+mean(surv.df[surv.df$censored == 0,]$t0_age + surv.df[surv.df$censored == 0,]$t2event)
+sd(surv.df[surv.df$censored == 0,]$t0_age + surv.df[surv.df$censored == 0,]$t2event)
 ```
 
 
@@ -316,32 +329,74 @@ levels(surv.df$income)
 We conduct a Pearson's Chi-Squared Test of Independence for each pair of factors. All pairs of factors are dependent, which makes sense as all factors are highly related to socioeconomic status (see p-values below). 
 
 _P-value for Chi-Squared Test of Independence for Race and Insurance Status_
-```{r, echo = FALSE}
-chisq.test(table(surv.df$race, surv.df$insured))$p.value
+Race and insurance status are not independent, and the Cramer's V indicates moderately strong association between the two covariates.
+
+```{r}
+table(surv.df$race, surv.df$insured)
+chisq.test(table(surv.df$race, surv.df$insured))
+```
+```{r}
+cramersV(table(surv.df$race, surv.df$insured))
 ```
 
 _P-value for Chi-Squared Test of Independence for Race and Baseline Household Income_
-```{r, echo = FALSE}
-chisq.test(table(surv.df$race, surv.df$income))$p.value
+
+Race and income  are not independent, and the Cramer's V indicates a strong association between the two covariates.
+```{r}
+table(surv.df$race, surv.df$income)
+chisq.test(table(surv.df$race, surv.df$income))
+```
+```{r}
+cramersV(table(surv.df$race, surv.df$income))
 ```
 
 _P-value for Chi-Squared Test of Independence for Race and BMI Group_
-```{r, echo = FALSE}
-chisq.test(table(surv.df$race, surv.df$bmi_group))$p.value
+
+Race and BMI are not independent, with Cramer's V indicating a moderate association between the two covariates. 
+
+```{r}
+table(surv.df$race, surv.df$bmi_group)
+chisq.test(table(surv.df$race, surv.df$bmi_group))
 ```
+```{r}
+cramersV(table(surv.df$race, surv.df$bmi_group))
+```
+
 _P-value for Chi-Squared Test of Independence for Insurance Status and Baseline Household Income_
-```{r, echo = FALSE}
-chisq.test(table(surv.df$insured, surv.df$income))$p.value
+
+Insurance status and household income are not independent, with Cramer's V indicating a moderately strong association between the two covariates. 
+```{r}
+table(surv.df$insured, surv.df$income)
+chisq.test(table(surv.df$insured, surv.df$income))
+```
+
+```{r}
+cramersV(table(surv.df$insured, surv.df$income))
 ```
 
 _P-value for Chi-Squared Test of Independence for Insurance Status and BMI Group_
-```{r, echo = FALSE}
-chisq.test(table(surv.df$insured, surv.df$bmi_group))$p.value
+
+Insurance status and household income are not independent, with Cramer's V indicating a weak association between the two covariates. 
+
+```{r}
+table(surv.df$insured, surv.df$bmi_group)
+chisq.test(table(surv.df$insured, surv.df$bmi_group))
+```
+
+```{r}
+cramersV(table(surv.df$insured, surv.df$bmi_group))
 ```
 
 _P-value for Chi-Squared Test of Independence for Baseline Household Income and BMI Group_
-```{r, echo = FALSE}
-chisq.test(table(surv.df$income, surv.df$bmi_group))$p.value
+
+BMI and household income are not independent, with Cramer's V indicating a moderately weak association between the two covariates. 
+
+```{r}
+table(surv.df$income, surv.df$bmi_group)
+chisq.test(table(surv.df$income, surv.df$bmi_group))
+```
+```{r}
+cramersV(table(surv.df$income, surv.df$bmi_group))
 ```
 
 
@@ -473,13 +528,13 @@ We find that the hazard ratios for diabetes incidence are highest for Hispanic w
 dbts.mod.noinsure
 ```
 
-## Stratified Cox Model with Covariate Interactions
+<!-- ## Stratified Cox Model with Covariate Interactions -->
 
-Race and household income may be confounding in their effects on health status, since certain race/ethnic groups are over-represented in lower income groups. We assess whether there is a significant interaction between these two covariates after adjusting for BMI and stratifying by age group. The model shows no significant interactions between any race or income group. Low significance of interaction groups may be due to very few replications of factor combinations, which results in a convergence warning in the model fitting. 
+<!-- Race and household income may be confounding in their effects on health status, since certain race/ethnic groups are over-represented in lower income groups. We assess whether there is a significant interaction between these two covariates after adjusting for BMI and stratifying by age group. The model shows no significant interactions between any race or income group. Low significance of interaction groups may be due to very few replications of factor combinations, which results in a convergence warning in the model fitting.  -->
 
-```{r, echo = FALSE}
-coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df)
-```
+<!-- ```{r, echo = FALSE} -->
+<!-- coxph(surv_obj ~ insured + race*income + bmi_group + strata(age_group), data = surv.df) -->
+<!-- ``` -->
 
 # Stratified Cox Model with Insurance Status, Race, and BMI
 
@@ -488,16 +543,26 @@ To investigate which factor adjustment makes the effect of insurance status insi
 __CPH Model for Insurance and Race__
 ```{r, echo = FALSE}
 coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df)
+
+cox.zph(coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df))
 ```
 
 __CPH Model for Insurance and Baseline Household Income__
 ```{r, echo = FALSE}
 coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df)
+cox.zph(coxph(surv_obj ~ insured + income + strata(age_group), data = surv.df))
+```
+
+```{r, echo = FALSE}
+coxph(surv_obj ~ insured + strata(income) + strata(age_group), data = surv.df)
+cox.zph(coxph(surv_obj ~ insured + strata(income) + strata(age_group), data = surv.df))
+
 ```
 
 __CPH Model for Insurance and BMI Group__
 ```{r, echo = FALSE}
 coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df)
+cox.zph(coxph(surv_obj ~ insured + bmi_group + strata(age_group), data = surv.df))
 ```
 
 We then consider a model with insurance status, race, and BMI group, stratified by age. We find that after adjusting for race, BMI group, and age, those with insurance verse those without insurance are at significantly lower risk for diabetes incidence (HR = 0.581, $p = 0.126$). We proceed to our model assumptions to validate this result. 
