@@ -215,6 +215,28 @@ table(surv.df$event)
 
 # Exploratory Analysis
 
+Cross tabulation for insurance and income.
+
+```{r}
+ftable(xtabs(~insured + income, data = surv.df))
+
+CrossTable(surv.df$insured, surv.df$income,
+           prop.chisq = FALSE,
+           format = "SPSS",
+           digits = 2)
+```
+
+Cross tabulation for income and BMI. 
+
+```{r}
+ftable(xtabs(~bmi_group + income, data = surv.df))
+
+CrossTable(surv.df$bmi_group, surv.df$income,
+           prop.chisq = FALSE,
+           format = "SPSS",
+           digits = 2)
+```
+
 Cross tabulation for race and income. 
 
 ```{r, echo = FALSE}
