@@ -120,6 +120,25 @@ mean(surv.df[surv.df$censored == 0,]$t0_age + surv.df[surv.df$censored == 0,]$t2
 sd(surv.df[surv.df$censored == 0,]$t0_age + surv.df[surv.df$censored == 0,]$t2event)
 ```
 
+```{r, echo = FALSE}
+xtabs(~surv.df$race + surv.df$event)
+```
+
+```{r, echo = FALSE}
+xtabs(~surv.df$bmi_group + surv.df$event)
+```
+
+```{r, echo = FALSE}
+xtabs(~surv.df$insured + surv.df$event)
+```
+
+```{r, echo = FALSE}
+xtabs(~surv.df$income + surv.df$event)
+```
+
+```{r, echo = FALSE}
+xtabs(~surv.df$age_group + surv.df$event)
+```
 
 ```{r Hist_t2event_allsubjects, echo = FALSE}
 all.subjects = surv.df$t2event
@@ -279,12 +298,6 @@ Incident diabetes by race.
 xtabs(~race + event, data = surv.df)
 ```
 
-Proportion of incident diabetes by race. Incident diabetes appears higher for black and Hispanic participants than for other groups.
-
-```{r, echo = FALSE}
-xtabs(~race + event, data = surv.df)[,2] / 
-  xtabs(~race + event, data = surv.df)[,1]
-```
 
 
 Incident diabetes by insurance status. 
@@ -294,12 +307,7 @@ Incident diabetes by insurance status.
 xtabs(~insured + event, data = surv.df)
 ```
 
-Proportion of incident diabetes for those without and with insurance. Proportion of incident diabetes by health insurance status by the end of the study appears higher for those without health insurance at baseline.
 
-```{r, echo = FALSE}
-xtabs(~insured + event, data = surv.df)[,2] / 
-  xtabs(~insured + event, data = surv.df)[,1]
-```
 
 Incident diabetes by household income at baseline.
 
@@ -308,12 +316,6 @@ Incident diabetes by household income at baseline.
 xtabs(~income + event, data = surv.df)
 ```
 
-Proportion of incident diabetes by household income at baseline. Incident diabetes appears higher for lower income groups.
-
-```{r, echo = FALSE}
-xtabs(~income + event, data = surv.df)[,2] / 
-  xtabs(~income + event, data = surv.df)[,1]
-```
 
 Incident diabetes by baseline BMI group status.
 
@@ -321,12 +323,7 @@ Incident diabetes by baseline BMI group status.
 xtabs(~bmi_group + event, data = surv.df)
 ```
 
-Proportion of incident diabetes by baseline BMI group. 52.46% of women with a baseline BMI 40 or above developed diabetes over the course of the study. 21.90% of women with a BMI greater than 30 and strictly less than 40 developed diabetes over the course of the study. Just 5.38% of women with a baseline BMI strictly less than 30 developed diabetes during the course of the study. 
 
-```{r, echo = FALSE}
-xtabs(~bmi_group + event, data = surv.df)[,2] / 
-  xtabs(~bmi_group + event, data = surv.df)[,1]
-```
 
 # Stratified Cox Models
 
@@ -432,7 +429,7 @@ We build a stratified Cox model with diabetes survival depending only on health 
 #BUILD MODEL
 dbts.mod.ins= coxph(surv_obj ~ insured + strata(age_group), 
                     data = surv.df)
-dbts.mod.ins
+summary(dbts.mod.ins)
 
 ```
 
@@ -476,7 +473,7 @@ We construct a stratified Cox model of diabetes survival depending on insurance 
 ##STRATIFIED COX MODEL WITH INSURANCE, RACE, INCOME, and BMI group STRATIFIED BY AGE
 #BUILD MODEL
 dbts.mod.all = coxph(surv_obj ~ insured + race + income + bmi_group + strata(age_group), data = surv.df)
-dbts.mod.all
+summary(dbts.mod.all)
 ```
 
 We assess the proportional hazards assumption for the above model using a Goodness-of-Fit test based on the Schoenfeld residuals (Grambsch & Therneau, 1994). All p-values are greater than $\alpha = 0.05$, so the proportional hazards assumption is met for the model.
@@ -563,6 +560,7 @@ dbts.mod.noinsure
 To investigate which factor adjustment makes the effect of insurance status insignificant, we build separate stratified Cox models with race and one of the other factors: race, household income, or BMI group. From the models below, we see that adjusting for baseline household income makes the effect of insurance status insignificant. 
 
 __CPH Model for Insurance and Race__
+
 ```{r, echo = FALSE}
 coxph(surv_obj ~ insured + race + strata(age_group), data = surv.df)
 
